@@ -1,0 +1,349 @@
+\chapter{Introducción a \texorpdfstring{\( \lambdas \)}{Lambda S}}\label{Chapter4}
+
+\( \lambdas \) es una extensión del \( \lambdacalculus \) para modelar la computación cuántica. Este lenguaje utiliza un sistema de tipos inspirado por la lógica lineal~\cite{abramsky} que le permite diferenciar
+entre las superposiciones y los estados de la base canónica con el objetivo de cumplir con el teorema del no clonado (Teorema~\ref{thm:no-cloning}). Por otra parte, \( \lambdas \) introduce un sistema de reescritura inspirado por el álgebra lineal~\cite{arrighi3, arrighi4}, el cual le permite tratar a las expresiones que esperan información duplicable como funciones lineales, con el fin de soportar fácilmente el operador de medición.
+
+\section{Gramática de tipos}
+
+La gramática de tipos es la siguiente:
+\begin{align*}
+	\mathfrak{B} & \triangleq \qubittype \mid \qubittype \times \mathfrak{B} \tag*{Tipos qubit base (\( \mathbf{B} \))} \\
+	\Psi         & \triangleq \mathfrak{B} \mid S(\Psi) \mid \Psi \times \Psi \tag*{Tipos qubit (\( \mathbf{Q} \))}       \\
+	A            & \triangleq \Psi \mid \Psi \Rightarrow A \mid S(A) \tag*{Tipos (\( \mathbf{T} \))}
+\end{align*}
+La gramática está dividida en tres niveles: \( \mathfrak{B} \) es para los qubits base, \( \Psi \) se utiliza para qubits generales, y \( A \) para tipos generales.
+El tipo \( \qubittype \) se utiliza para los estados base de 1 qubit, como \( \ket{0} \). Si \( \Psi \) es una base, \( S(\Psi) \) se utiliza para el espacio generado por ese conjunto, lo que permite representar superposiciones. Como el tensor de los espacios es lo mismo que el espacio generado por el producto cartesiano de las bases, basta con introducir el constructor \( \times \) para representar el producto tensorial. Notamos \( \underbrace{\qubittype \times \qubittype \times \cdots \times \qubittype}_{n \text{ veces}} \) como \( \qubittype^n \), donde dicho producto asocia a derecha. Por ejemplo, \( \ket{0} \times \ket{1} \) tiene tipo \( \qubittype^2 \), mientras que \( \frac{1}{\sqrt{2}} \ket{0} \times \ket{0} + \frac{1}{\sqrt{2}} \ket{1} \times \ket{1} \) tiene tipo \( S(\qubittype^2) \).
+
+\section{Gramática de pre-términos}
+
+Empezamos por definir la gramática que nos permitirá construir expresiones del lenguaje. A estas expresiones las denominamos \textit{pre-términos}.
+
+La gramática de pre-términos es la siguiente:
+\begin{align*}
+	b & \triangleq x \mid \abstr{\vrbl{x}{\Psi}}{t} \mid \ket{0} \mid \ket{1} \mid b \times b \tag*{Términos base \( (\mathcal{B}) \)}                                                                       \\
+	v & \triangleq b \mid (v + v) \mid \nullvec{A} \mid \alpha . v \mid v \times v \tag*{Valores \( (\mathcal{V}) \)}                                                                                  \\
+	t & \triangleq v \mid \app{t}{t} \mid \proj{j}{t} \mid \ifte{}{t}{t} \mid \alpha . t \mid t \times t \mid \head{t} \mid \tail{t} \mid \cast{S(A)}{S(B \times C)} t \tag*{Términos \( (\Lambda) \)}
+\end{align*}
+
+La gramática está dividida en tres niveles: \( b \) es para los pre-términos base (valores no superpuestos), \( v \) son los valores generales y \( t \) los pre-términos generales.
+Como vimos antes, el constructor \( \times \) se utiliza para representar productos tensoriales. Por ejemplo, \( \ket{01} \) se representa en \( \lambdas \) como \( \ket{0} \times \ket{1} \). El constructor \( \ifte{}{}{} \) se utiliza como un \textit{if-then-else} que decide sobre vectores base. Utilizamos la notación \( \ifte{t}{r}{s} \) para representar \( \app{(\ifte{}{r}{s})}{t} \).
+\( \proj{j} \) se utiliza para las mediciones, donde \( j \) representa la cantidad de qubits a medir, los cuales ocupan las primeras \( j \) posiciones. También tenemos los operadores de listas \textsf{head} y \textsf{tail}, y un operador de casting que desarrollaremos más adelante.
+
+A continuación, presentaremos las reglas que nos permitirán asignarles tipos a los pre-términos.
+
+\section{Relación de subtipado}
+Un tipo \( A \) es interpretado como un conjunto de vectores, y \( S(A) \) como el espacio vectorial generado por tal conjunto. Es decir que, interpretados como conjuntos de vectores, tenemos que \( A \subseteq S(A) \) y \( S(S(A)) = S(A) \). Por lo tanto, para capturar este fenómeno, podemos establecer la siguiente relación de subtipado:
+\[
+	\quad\quad\quad\quad\quad\quad\quad\quad
+	\infer{A \preceq A}{}
+	\quad\quad\quad\quad
+	\infer{A \preceq C}{A \preceq B & B \preceq C}
+\]
+\[
+	\quad\quad\quad\quad
+	\infer{A \preceq S(A)}{}
+	\quad\quad
+	\infer{S(S(A)) \preceq S(A)}{}
+	\quad\quad
+	\infer{\Psi \Rightarrow A \preceq \Psi \Rightarrow B}{A \preceq B}
+\]
+
+\[
+	\quad\quad\quad
+	\infer{S(A) \preceq S(B)}{A \preceq B}
+	\quad\quad
+	\infer{A \times C \preceq B \times C}{A \preceq B}
+	\quad\quad
+	\infer{C \times A \preceq C \times B}{A \preceq B}
+\]
+
+\section{Sistema de tipos}
+El sistema de tipos está compuesto por juicios de la forma \( \Gamma \vdash t:A \), donde \( \Gamma \) es un conjunto de variables tipadas con tipos qubit. En cuanto a dichos conjuntos, se van a obviar las llaves, por lo que se escribirá \( \vrbl{x_1}{\Psi_1},\ldots,\vrbl{x_n}{\Psi_n} \) en lugar de \( \{\vrbl{x_1}{\Psi_1},\ldots,\vrbl{x_n}{\Psi_n}\} \).
+\\Las reglas del sistema de tipos son las siguientes:
+\[
+	\infer[A_X]{\vrbl{x}{\Psi} \vdash x : \Psi}{}
+	\quad
+	\infer[A_{X_{\vec{0}}}]{\vdash \nullvec{A}: S(A)}{}
+	\quad
+	\infer[A_{X_{\ket{0}}}]{\vdash \ket{0}: \qubittype}{}
+	\quad
+	\infer[A_{X_{\ket{1}}}]{\vdash \ket{1}: \qubittype}{}
+\]
+\[
+	\infer[S^{\alpha}_{I}]{\Gamma \vdash \alpha . t : S(A)}{\Gamma \vdash t: A}
+	\quad
+	\infer[S^{+}_{I}]{\Gamma, \Delta \vdash (t + u): S(A)}{\Gamma \vdash t : A & \Delta \vdash u : A & \Gamma \cap \Delta = \emptyset}
+	\quad
+	\infer[S_E]{\Gamma \vdash \proj{j}{t} : \qubittype^j \times S(\qubittype^{n - j})}{\Gamma \vdash t : S(\qubittype^n)}
+\]
+\[
+	\infer[\preceq]{\Gamma \vdash t : B}{\Gamma \vdash t: A & A \preceq B}
+	\quad
+	\infer[\textit{If}]{\Gamma \vdash \ifte{}{t}{r}: \qubittype \Rightarrow A}{\Gamma \vdash t : A & \Gamma \vdash r : A}
+	\quad
+	\infer[\Rightarrow_I]{\Gamma \vdash \abstr{\vrbl{x}{\Psi}}{t} : \Psi \Rightarrow A}{\Gamma, \vrbl{x}{\Psi} \vdash t : A}
+\]
+\[
+	\quad\quad\quad\quad\quad
+	\infer[\Rightarrow_E]{\Gamma, \Delta \vdash \app{t}{u} : A}{\Gamma \vdash t : \Psi \Rightarrow A & \Delta \vdash u : \Psi & \Gamma \cap \Delta = \emptyset}
+\]
+\[
+	\quad\quad\quad\quad\quad
+	\infer[\Rightarrow_{ES}]{\Gamma, \Delta \vdash t u : S(A)}{\Gamma \vdash t : S(\Psi \Rightarrow A) & \Delta \vdash u : S(\Psi) & \Gamma \cap \Delta = \emptyset}
+\]
+\[
+	\quad\quad\quad\quad\quad
+	\infer[\textit{W}]{\Gamma, \vrbl{x}{\qubittype^n} \vdash t : A}{\Gamma \vdash t: A & x \notin \Gamma}
+	\quad
+	\infer[\textit{C}]{\Gamma, \vrbl{x}{\qubittype^n} \vdash t[x/y] : A}{\Gamma, \vrbl{x}{\qubittype^n}, \vrbl{y}{\qubittype^n} \vdash t : A}
+\]
+\[
+	\infer[\times_I]{\Gamma, \Delta \vdash t \times u : A \times B}{\Gamma \vdash t : A & \Delta \vdash u : B & \Gamma \cap \Delta = \emptyset}
+	\quad
+	\infer[\times_{Er}]{\Gamma \vdash head\ t : \qubittype}{\Gamma \vdash t : \qubittype^n}
+	\quad
+	\infer[\times_{El}]{\Gamma \vdash tail\ t : \qubittype^{n - 1}}{\Gamma \vdash t : \qubittype^n}
+\]
+\[
+	\quad\quad
+	\infer[\Uparrow_r]{\Gamma \vdash \cast{S(S(A) \times B)}{S(A \times B)} t : S(A \times B)}{\Gamma \vdash t : S(S(A) \times B)}
+	\quad
+	\infer[\Uparrow_l]{\Gamma \vdash \cast{S(A \times S(B))}{S(A \times B)} t : S(A \times B)}{\Gamma \vdash t : S(A \times S(B))}
+\]
+
+Antes de pasar a explicar las reglas, introducimos la siguiente definición.
+
+\begin{definition}
+	Definimos \textit{término} a aquellos pre-términos a los que se les puede asignar un tipo utilizando las reglas precedentes.
+\end{definition}
+
+La regla \( A_X \) permite tipar a las variables solo con tipos qubit.
+
+La regla \( A_{X_{\vec{0}}} \) tipa al vector nulo como un término no base, dado que el vector nulo no puede pertenecer a la base de ningún espacio vectorial.
+
+Las reglas \( A_{X_{\ket{0}}} \) y \( A_{X_{\ket{1}}} \) tipan a los qubits base con el tipo base \( \mathbb{B} \).
+
+La regla \( S_I^\alpha \) dice que un término multiplicado por un escalar no es un término base. Esto se debe a que nuestro operador de medición remueve cualquier escalar, por lo que tener uno implica que el término aún no ha sido medido. La regla \( S_I^+ \) es el análogo para sumas de la regla anterior.
+
+La regla \( S_E \) fuerza que el término a medir esté tipado con un tipo de la forma \( S(\qubittype^n) \), y luego de medir los primeros \( j \) qubits, el nuevo tipo pasa a ser \( \qubittype^j \times S(\qubittype^{n - j}) \), es decir, elimina la superposición de los primeros \( j \) tipos en el producto tensorial.
+
+La regla \( \preceq \) es la que permite aplicar las reglas de subtipado sobre los términos.
+
+La regla \textit{If} tipa los términos de la forma \( \ifte{}{t}{r} \) como funciones que esperan argumentos no lineales. Esto implica que el \textit{if-then-else} distribuye linealmente sobre superposiciones. Por ejemplo:
+\begin{equation*}
+	\begin{split}
+		\ifte{(\alpha . \ket{0} + \beta . \ket{1})}{t}{r}
+		& = \app{(\ifte{}{t}{r})}{(\alpha . \ket{0} + \beta . \ket{1})} \\
+		& \reducesto^* \alpha . \app{(\ifte{}{t}{r})}{\ket{0}} + \beta . \app{(\ifte{}{t}{r})}{\ket{1}} \\
+		& = \alpha . \ifte{\ket{0}}{t}{r} + \beta . \ifte{\ket{1}}{t}{r} \\
+		& \reducesto^* \alpha . r + \beta . t
+	\end{split}
+\end{equation*}
+
+La regla \( \Rightarrow_I \) nos dice cómo tipar abstracciones.
+
+La regla \( \Rightarrow_E \) nos dice cómo tipar aplicaciones con términos no superpuestos, mientras que la regla \( \Rightarrow_{ES} \) hace lo mismo sobre superposiciones.
+
+Las reglas \( W \) y \( C \) corresponden a las reglas de weakening y contraction de variables con tipos base, considerando que los términos base se pueden clonar.
+
+Las reglas \( \times_I \), \( \times_{Er} \) y \( \times_{El} \) son la introducción y eliminación estándares para listas.
+
+Las reglas \( \Uparrow_r \) y \( \Uparrow_l \) son los casteos de tipo, donde los únicos casteos posibles son \( S(S(A) \times B) \) y \( S(A \times S(B)) \) en \( S(A \times B) \).
+
+Vamos a introducir una notación especial para combinaciones lineales de términos, que nos será de utilidad para el sistema de reescritura y durante la prueba de normalización fuerte.
+
+\begin{definition}
+	Dado un conjunto de términos \( r_1, \ldots, r_n \) y \( n \geq 1 \), notamos \( \sum\limits_{i = 1}^n [\alpha_i .] r_i \) al término \( [\alpha_1 .] r_1 + \cdots + [\alpha_n .] r_n \), donde \( [\alpha_k .] \) indica que \( \alpha_k \) puede no estar presente. \\
+	En particular, para \( n = 0 \) y \( r_i \) de tipo \( A \) para todo \( i \), \( \sum\limits_{i = 1}^n [\alpha_i .] r_i = \nullvec{A} \).
+\end{definition}
+
+\section{Sistema de reescritura}
+El sistema de reescritura posee las siguientes reglas (notar que algunas son dependientes del tipo del término sobre el cual se apliquen, por lo cual el sistema solo está definido sobre términos correctamente tipados):
+
+\textbf{Beta}
+\begin{align*}
+	\text{Si } b \text{ tiene tipo } \qubittype^n\text{ y } b \in \mathcal{B} \text{, entonces } \app{(\abstr{\vrbl{x}{\qubittype^n}}{t})}{b} \reducesto_{(1)} t[b/x] \tag{\( \beta_\mathsf{b} \)} \\
+	\text{Si } u \text{ tiene tipo } S(\Psi) \text{, entonces }
+	\app{(\abstr{\vrbl{x}{S(\Psi)}}{t})}{u} \reducesto_{(1)} t[u/x] \tag{\( \beta_\mathsf{n} \)}
+\end{align*}
+
+\textbf{If}
+\begin{align*}
+	\ifte{\ket{1}}{u}{v} & \reducesto_{(1)} u \tag{\( \mathsf{if_1} \)} \\
+	\ifte{\ket{0}}{u}{v} & \reducesto_{(1)} v \tag{\( \mathsf{if_0} \)}
+\end{align*}
+
+\textbf{Distribuciones lineales}
+\begin{align*}
+	\text{Si } t \text{ tiene tipo } \qubittype^n \Rightarrow A \text{, entonces } \app{t}{(u + v)}                & \reducesto_{(1)} (\app{t}{u} + \app{t}{v}) \tag{\( \mathsf{lin_r}^+ \)} \\
+	\text{Si } t \text{ tiene tipo } \qubittype^n \Rightarrow A \text{, entonces } \app{t}{(\alpha . u)}           & \reducesto_{(1)} \alpha . \app{t}{u} \tag{\( \mathsf{lin_r}^\alpha \)}  \\
+	\text{Si } t \text{ tiene tipo } \qubittype^n \Rightarrow A \text{, entonces } \app{t}{\nullvec{\qubittype^n}} & \reducesto_{(1)} \nullvec{A} \tag{\( \mathsf{lin_r}^0 \)}               \\
+	\app{(t + u)}{v}                                                                                               & \reducesto_{(1)} (\app{t}{v} + \app{u}{v}) \tag{\( \mathsf{lin_l}^+ \)} \\
+	\app{(\alpha . t)}{u}                                                                                          & \reducesto_{(1)} \alpha . \app{t}{u} \tag{\( \mathsf{lin_l}^\alpha \)}  \\
+	\app{\nullvec{\qubittype^n \Rightarrow A}}{t}                                                                  & \reducesto_{(1)} \nullvec{A} \tag{\( \mathsf{lin_l}^0 \)}
+\end{align*}
+
+\textbf{Axiomas de espacios vectoriales}
+\begin{align*}
+	\nullvec{S(A)}                                              & \reducesto_{(1)} \nullvec{A} \tag{\textsf{null}}                           \\
+	(\nullvec{A} + t)                                           & \reducesto_{(1)} t \tag{\textsf{neutral}}                                  \\
+	1 . t                                                       & \reducesto_{(1)} t \tag{\textsf{unit}}                                     \\
+	\text{Si } t \text{ tiene tipo } A \text{, entonces } 0 . t & \reducesto_{(1)} \nullvec{A} \tag{\( \mathsf{zero}_\alpha \)}              \\
+	\alpha . \nullvec{A}                                        & \reducesto_{(1)} \nullvec{A} \tag{\textsf{zero}}                           \\
+	\alpha . (\beta . t)                                        & \reducesto_{(1)} (\alpha \cross \beta) . t \tag{\textsf{prod}}             \\
+	\alpha . (t + u)                                            & \reducesto_{(1)} (\alpha . t + \alpha . u) \tag{\( \alpha\mathsf{dist} \)} \\
+	(\alpha . t + \beta . t)                                    & \reducesto_{(1)} (\alpha + \beta) . t \tag{\textsf{fact}}                  \\
+	(\alpha . t + t)                                            & \reducesto_{(1)} (\alpha + 1) . t \tag{\( \mathsf{fact}^1 \)}              \\
+	(t + t)                                                     & \reducesto_{(1)} 2 . t \tag{\( \mathsf{fact}^2 \)}
+\end{align*}
+
+\textbf{Igualdades}
+\begin{align*}
+	(u + v)               & =_{AC} (v + u) \tag{\textsf{comm}}                             \\
+	((u + v) + w)         & =_{AC} (u + (v + w)) \tag{\(\mathsf{assoc}^+\)}                \\
+	(u \times v) \times w & =_{AC} u \times (v \times w) \tag{\(\mathsf{assoc}^{\times}\)}
+\end{align*}
+
+\textbf{Listas}
+\begin{align*}
+	\text{Si } h \neq u \times v \text{ y } h \in \mathcal{B} \text{, entonces } \head{h \times t} & \reducesto_{(1)} h \tag{\textsf{head}} \\
+	\text{Si } h \neq u \times v \text{ y } h \in \mathcal{B} \text{, entonces } \tail{h \times t} & \reducesto_{(1)} h \tag{\textsf{tail}}
+\end{align*}
+
+\textbf{Casteos de tipos}
+\begin{align*}
+	\cast{S(S(A) \times B)}{S(A \times B)} ((r + s) \times u)      & \reducesto_{(1)} (\cast{S(S(A) \times B)}{S(A \times B)}\!(r \times u) + \cast{S(S(A) \times B)}{S(A \times B)}\!(s \times u)) \tag{\( \mathsf{dist_r}^+ \)} \\
+	\cast{S(B \times S(A))}{S(B \times A)} (u \times (r + s))      & \reducesto_{(1)} (\cast{S(B \times S(A))}{S(B \times A)}\!(u \times r) + \cast{S(B \times S(A))}{S(B \times A)}\!(u \times s)) \tag{\( \mathsf{dist_l}^+ \)} \\
+	\cast{S(S(A) \times B)}{S(A \times B)} ((\alpha . r) \times u) & \reducesto_{(1)} \alpha . \cast{S(S(A) \times B)}{S(A \times B)} (r \times u) \tag{\( \mathsf{dist_r}^\alpha \)}                                             \\
+	\cast{S(B \times S(A))}{S(B \times A)} (u \times (\alpha . r)) & \reducesto_{(1)} \alpha . \cast{S(B \times S(A))}{S(B \times A)} (u \times r) \tag{\( \mathsf{dist_l}^\alpha \)}                                             \\
+	\cast{S(S(A) \times B)}{S(A \times B)} (\nullvec{A} \times u)  & \reducesto_{(1)} \nullvec{A \times B} \tag{\( \mathsf{dist_r}^0 \)}                                                                                          \\
+	\cast{S(B \times S(A))}{S(B \times A)} (u \times \nullvec{A})  & \reducesto_{(1)} \nullvec{B \times A} \tag{\( \mathsf{dist_l}^0 \)}                                                                                          \\
+	\cast{S(A)}{S(B \times C)} (t + u)                             & \reducesto_{(1)} (\cast{S(A)}{S(B \times C)} t + \cast{S(A)}{S(B \times C)} u) \tag{\( \mathsf{dist}_\Uparrow^+ \)}                                          \\
+	\cast{S(A)}{S(B \times C)} (\alpha . t)                        & \reducesto_{(1)} \alpha \cast{S(A)}{S(B \times C)} t \tag{\( \mathsf{dist}_\alpha^+ \)}
+\end{align*}
+\begin{align*}
+	\text{Si } u \in \mathcal{B} \text{, entonces } \cast{S(S(A) \times B)}{S(A \times B)} (u \times v) & \reducesto_{(1)} u \times v \tag{\( \mathsf{neut_r}^\Uparrow \)} \\
+	\text{Si } u \in \mathcal{B} \text{, entonces } \cast{S(A \times S(B))}{S(A \times B)} (v \times u) & \reducesto_{(1)} v \times u \tag{\( \mathsf{neut_l}^\Uparrow \)}
+\end{align*}
+
+\textbf{Proyección}
+\begin{multline*}
+	\proj{j}{(\sum\limits_{i = 1}^n [\alpha_i .] \prod_{h = 1}^m b_{hi})} \reducesto_{(p)} \prod_{h = 1}^j b_{hk} \times \sum\limits_{i \in P} \left(\frac{\alpha_i}{\sqrt{\sum_{r \in P} |\alpha_r|^2}}\right) . \prod_{h = j + 1}^m b_{hi} \text{ donde } k \leq n; \\
+	j\!\leq m; P\!\subseteq \mathbb{N}^{\leq n} \mid \forall i\!\in P, \forall h\!\leq j, b_{hi} = b_{hk}; p\!=\!\sum_{i \in P}\!\left( \frac{|\alpha_i|^2}{\sum_{r = 1}^n |\alpha_r|^2}\!\right);
+	\forall i, b_i\!\in \{\ket{0},\!\ket{1}\} \\ \sum_{i = 1}^n [\alpha_i .] \prod_{h = 1}^m b_{hi} \text{ es un término normal; y si un } \alpha_k \text{ no aparece, } \alpha_k = 1
+	\tag{\textsf{proj}}
+\end{multline*}
+
+\textbf{Reglas contextuales}
+\[
+	\quad\quad\quad\quad\quad\quad
+	\infer{\app{t}{v} \reducesto_{(p)} \app{u}{v}}{t \reducesto_{(p)} u}
+	\quad\quad
+	\infer{\app{(\abstr{\vrbl{x}{\qubittype^n}}{v})}{t} \reducesto_{(p)} \app{(\abstr{\vrbl{x}{\qubittype^n}}{v})}{u}}{t \reducesto_{(p)} u}
+\]
+\[
+	\infer{t + v \reducesto_{(p)} u + v}{t \reducesto_{(p)} u}
+	\quad
+	\infer{\alpha . t \reducesto_{(p)} \alpha . u}{t \reducesto_{(p)} u}
+	\quad
+	\infer{\proj{j}{t} \reducesto_{(p)} \proj{j}{u}}{t \reducesto_{(p)} u}
+	\quad
+	\infer{t \times v \reducesto_{(p)} u \times v}{t \reducesto_{(p)} u}
+	\quad
+	\infer{v \times t \reducesto_{(p)} v \times u}{t \reducesto_{(p)} u}
+\]
+\[
+	\infer{\ifte{t}{r}{s} \reducesto_{(p)} \ifte{u}{r}{s}}{t \reducesto_{(p)} u}
+	\quad
+	\infer{\head{t} \reducesto_{(p)} \head{u}}{t \reducesto_{(p)} u}
+	\quad
+	\infer{\tail{t} \reducesto_{(p)} \tail{u}}{t \reducesto_{(p)} u}
+	\quad
+	\infer{\cast{S(A)}{S(B)} t \reducesto_{(p)} \cast{S(A)}{S(B)} u}{t \reducesto_{(p)} u}
+\]
+
+La relación \( \reducesto_{(p)} \) es probabilística, es decir, corresponde a un conjunto de ternas \( (t, r, p) \) donde \( t \) reduce a \( r \) y \( p \) es la probabilidad de ocurrencia. A excepción de la regla de proyección \textsf{proj}, todas las demás reglas tienen probabilidad de ocurrencia \( 1 \). De ahora en más, cuando conocer \( p \) no sea estrictamente necesario, vamos a escribir \( \reducesto \) para referirnos a \( \reducesto_{(p)} \). A los efectos de demostrar esta propiedad, los \( p \) no son importantes. En la literatura, existen varias nociones diferentes de normalización para lenguajes probabilísticos. Por un lado, tenemos la noción de \textit{terminación casi asegurada} (\textit{almost-surely terminating} o AST en inglés)~\cite{ast}, la cual en principio no impide la posibilidad de que las secuencias de reducción diverjan, pero la probabilidad de que esto ocurra es 0, lo que implica que en el límite las secuencias terminarán. Por otra parte, existe una versión \textit{débil} de la noción anterior (W-AST), la cual pide que exista al menos una secuencia que normalice en el límite. La propiedad de normalización fuerte que se trata en este trabajo implica la AST, la cual a su vez implica la W-AST, por lo que la que vamos a probar aquí es la más fuerte de todas.
+
+El sistema de reescritura depende del tipo de los términos sobre los que se aplique. Por ejemplo, en el caso de las abstracciones, estas pueden esperar un término base o una superposición, teniendo diferentes reglas de reducción para cada caso.
+
+La regla de reducción \( \beta_b \) solo se aplica cuando el argumento de la abstracción es un término base, y el tipo que espera la abstracción es un tipo base, mientras que la regla de reducción \( \beta_n \) espera una superposición.
+
+El grupo \textit{If} representa los tests sobre los qubits base \( \ket{0} \) y \( \ket{1} \).
+
+Las tres primeras del grupo de distribuciones lineales son las reglas que se usan cuando una abstracción a argumento no lineal es aplicada sobre un argumento lineal, es decir, cuando una abstracción esperando un término base obtiene una superposición. En estos casos, las \( \beta \)-reducciones no se pueden aplicar porque las condiciones de tipos no se cumplen. El resto de las reglas de este grupo tratan con superposiciones de funciones. Por ejemplo, la regla \( \mathsf{lin_l}^+ \) es la suma de funciones: una superposición es una suma, por lo tanto, un argumento que se le provee a una suma de funciones debe ser proveído a cada función en la suma.
+
+Las reglas de axiomas de espacios vectoriales representan los axiomas que su nombre indica. Por otra parte, las reglas de igualdades no son reglas de reducción propiamente dichas, sino que expresan el hecho de que el símbolo \( + \) es asociativo y conmutativo.
+
+Las regla \textsf{head} reduce un producto de términos en el primero de ellos, mientras que la regla \textsf{tail} reduce un producto de términos en todos menos el primero, y solo se pueden aplicar si el primer término del producto es un término base.
+
+Las primeras 6 reglas de casteos de tipos tratan con la distributividad de la suma, el producto escalar y el vector nulo. Por ejemplo, la regla \( \mathsf{dist}_r^+ \) actúa sobre el término \( ((r + s) \times u) \), distribuyendo el producto sobre la suma, y produciendo el término \( (r \times u) + (s \times u) \). Sin embargo, el término \( ((r + s) \times u) \) puede tener tipo \( S(A) \times B \), \( S(A) \times S(B) \) o \( S(A \times B) \), mientras que el término \( (r \times u) + (s \times u) \) solo puede tener tipo \( S(A \times B) \), por lo cual no podemos reducir el término directamente. Es por este motivo que \( \lambdas \) introduce el operador de casteo, mediante el cual se transforma el tipo del término de manera explícita para poder reducir.
+
+Las siguientes dos reglas distribuyen el cast con respecto a la suma y a los escalares. Las últimas dos reglas del grupo permiten remover el cast cuando ya no es necesario.
+
+La regla de proyección (\textsf{proj}) es la que permite realizar mediciones. Toma un argumento \( j \) el cual representa la cantidad de qubits a medir y solo actúa sobre términos en forma normal. Esta regla es la única con probabilidad distinto de \( 1 \), y viene dada por el cuadrado del módulo de los pesos. Por ejemplo, dado el término
+\[ (2.(\ket{0} \times \ket{1} \times \ket{1}) + (\ket{0} \times \ket{1} \times \ket{0})) + 3.(\ket{1} \times \ket{1} \times \ket{1}) \]
+medir los primeros 2 qubits producirá
+\[ \ket{0} \times \ket{1} \times (\frac{2}{\sqrt{5}} .\!\ket{1} + \frac{1}{\sqrt{5}} .\!\ket{0}) \text{ con probabilidad } \frac{|2|^2 + |1|^2}{|2|^2 + |1|^2 + |3|^2} = \frac{5}{14} \]
+o bien
+\[ \ket{1} \times \ket{1} \times (1 . \ket{1}) \text{ con probabilidad } \frac{|3|^2}{|2|^2 + |1|^2 + |3|^2} = \frac{9}{14} \]
+
+\section{Ejemplo: algoritmo de teleportación cuántica}
+
+En esta sección vamos a mostrar la expresividad del lenguaje mediante un ejemplo: el algoritmo de teleportación cuántica (ver Sección~\ref{teleportation}).
+La compuerta de Hadamard (\( H \)) produce \( \frac{1}{\sqrt{2}} . (\ket{0} + \ket{1}) \) cuando se aplica sobre \( \ket{0} \) y \( \frac{1}{\sqrt{2}} . (\ket{0} - \ket{1}) \) cuando se aplica sobre \( \ket{1} \). Podemos implementar esta compuerta en \( \lambdas \) con un \textit{if-then-else} de la siguiente forma:
+\[
+	\mathsf{H} = \abstr{\vrbl{x}{\qubittype}}{\frac{1}{\sqrt{2}} . (\ket{0} + \ifte{x}{(- \ket{1})}{\ket{1}})}
+\]
+Notar que la variable tiene tipo \( \qubittype \), por lo que si \textsf{H} es aplicada a una superposición \( \alpha . \ket{0} + \beta . \ket{1} \), tenemos la siguiente reducción:
+\[
+	\app{\mathsf{H}}{(\alpha . \ket{0} + \beta . \ket{1})} \reducesto \mathsf{H} \alpha .  \ket{0} + \mathsf{H} \beta . \ket{1} \reducesto \alpha . \mathsf{H} \ket{0} + \beta . \mathsf{H} \ket{1}
+\]
+que es lo que esperamos.
+
+La compuerta \textit{CNOT}, la cual aplica la negación sobre el segundo qubit siempre y cuando el primero sea \( \ket{1} \), puede ser implementada con un \textit{if-then-else} de la siguiente forma:
+\[
+	\mathsf{CNOT} = \abstr{\vrbl{x}{\qubittype \times \qubittype}}{((\head{x}) \times (\ifte{(\head{x})}{(\app{\mathsf{X}}{(\tail{x})})}{(\tail{x})}))}
+\]
+donde \textsf{X} implementa la compuerta \textit{NOT} de la siguiente forma:
+\[
+	\mathsf{X} = \abstr{\vrbl{x}{\qubittype}}{(\ifte{x}{\ket{0}}{\ket{1}})}
+\]
+Definimos \( \mathsf{H}_1^3 \) de tal forma que aplique \textit{H} sobre el primer qubit de un sistema de 3 qubits:
+\[
+	\mathsf{H}_1^3 = \abstr{\vrbl{x}{\qubittype^3}}{((\mathsf{H} (\head{x})) \times (\tail{x}))}
+\]
+Además, necesitamos aplicar la compuerta \textit{CNOT} sobre los primeros dos qubits, por lo que definimos \( \mathsf{CNOT}_{1,2}^3 \) de la siguiente forma:
+\[
+	\mathsf{CNOT}_{1,2}^3 = \abstr{\vrbl{x}{\qubittype^3}}{((\mathsf{CNOT} (\head{x} \times (\head{\tail{x}}))) \times (\tail{\tail{x}}))}
+\]
+Por otra parte, la compuerta \textit{Z} devuelve \( \ket{0} \) cuando recibe \( \ket{0} \) y \( - \ket{1} \) cuando recibe \( \ket{1} \), por lo que puede ser implementada de la siguiente forma:
+\[
+	\mathsf{Z} = \abstr{\vrbl{x}{\qubittype}}{(\ifte{x}{ (-\ket{1}) }{ \ket{0} })}
+\]
+La parte del algoritmo de Bob aplica \( Z \) y/o \textit{NOT} dependiendo de los bits que reciba de Alice. Por lo tanto, para cualquier \( \vdash U : \qubittype \Rightarrow S(\qubittype) \) o \( \vdash U : \qubittype \Rightarrow \qubittype \), definimos \( U^{(b)} \) como la función que aplica la compuerta \( U \) dependiendo del valor de un qubit base \( b \):
+\[
+	U^{(b)} = \app{(\abstr{\vrbl{x}{\qubittype}}{\abstr{\vrbl{y}{\qubittype}}{(\ifte{x}{Uy}{y})}})}{b}
+\]
+
+Las partes del algoritmo de Alice y Bob se definen por separado:\\ \\
+\( \mathsf{Alice} = \)
+\[
+	\lambda x\!:\!S(\qubittype)\times S(\qubittype\times
+	\qubittype)\ldotp(\proj{2}(\Uparrow_{S(S(\qubittype) \times \qubittype \times \qubittype)}^{S(\qubittype \times \qubittype \times \qubittype)}\!\mathsf{H}^3_1~(\mathsf{CNOT}^3_{1,2}\!\Uparrow_{S(\qubittype \times S(\qubittype \times \qubittype))}^{S(\qubittype \times \qubittype \times \qubittype)}\Uparrow_{S(S(\qubittype)\times S(\qubittype \times \qubittype))}^{S(\qubittype \times S(\qubittype \times \qubittype))} x)))
+\]
+
+Notar que antes de pasarle a \( \mathsf{CNOT}_{1,2}^3 \) el parámetro de tipo \( S(\qubittype) \times S(\qubittype \times \qubittype) \), debemos desarrollar el término por completo usando los dos casteos. Algo similar ocurre luego de aplicar la compuerta \textit{H}.
+
+El lado de Bob se implementa de la siguiente manera:
+\[
+	\mathsf{Bob} = \abstr{\vrbl{x}{\qubittype^3}}{(\mathsf{Z}^{(\head{x})} (\mathsf{X}^{(\head{\tail{x}})} (\tail{\tail{x}})) )}
+\]
+La teleportación es aplicada a un qubit arbitrario y al siguiente estado de Bell:
+\[
+	\beta_{00} = ( \frac{1}{\sqrt{2}} . \ket{0} \times \ket{0} + \frac{1}{\sqrt{2}} . \ket{1} \times \ket{1} )
+\]
+y se define de la siguiente manera:
+\[
+	\mathsf{Teleportation} = \abstr{q : S(\qubittype)}{( \app{\mathsf{Bob}}{( \cast{S(\qubittype \times \qubittype \times S(\qubittype))}{S(\qubittype \times \qubittype \times \qubittype)} \app{\mathsf{Alice}}{(q \times \beta_{00})})} )}
+\]
+Este término, como es de esperarse, tiene tipo \( S(\qubittype) \Rightarrow S(\qubittype) \), y aplicar la teleportación a cualquier superposición \( (\alpha . \ket{0} + \beta . \ket{1}) \) va a reducir en \( (\alpha . \ket{0} + \beta . \ket{1}) \).

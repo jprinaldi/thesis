@@ -1,0 +1,32 @@
+\chapter{Introducción}\label{Chapter1}
+
+% Modelando funciones: lambda cálculo.
+Las funciones son un concepto fundamental en la matemática y las ciencias de la computación. Por este motivo, Alonzo Church introdujo en la década de 1930 un modelo formal para estudiar sus propiedades denominado \( \lambdacalculus \). Este modelo posee dos simplificaciones que lo hacen muy simple: las funciones son anónimas (no se les asigna un nombre) y solo pueden tomar un argumento. Sin embargo, a pesar de su simpleza, el modelo es Turing-completo lo cual significa que puede ser usado para simular cualquier algoritmo computacional. Los lenguajes de programación funcionales están basados en el \( \lambdacalculus \).
+
+% Problemas del lambda cálculo: paradoja de Curry.
+Pero a pesar de su éxito como modelo computacional, el \( \lambdacalculus \) admite un cierto uso paradójico. Tomemos como ejemplo el siguiente enunciado:
+\begin{displayquote}
+Si este enunciado es cierto, entonces todos los números son primos.
+\end{displayquote}
+A pesar de que no todos los números son primos, el enunciado es válido, así que podemos proceder a analizar su valor de verdad. Es un ejercicio interesante, y los detalles se dejan para el lector~\cite{sep-curry-paradox}, pero la conclusión es que la mera existencia de dicho enunciado prueba que todos los números son primos. Más aún, el consecuente podría haber sido reemplazado por cualquier otro, y así se podría probar cualquier cosa. Esta paradoja fue propuesta por Haskell Curry.
+
+% Evitando la paradoja de Curry: lambda cálculo simplemente tipado.
+El \( \lambdacalculus \) permite expresar la paradoja de Curry, ya que su semántica admite cierto tipo de términos que la manifiestan. Estos términos expresan computaciones que no terminan, los cuales en lógica representan valores que no existen. Por este motivo, Church propuso en 1940~\cite{church1940formulation} una extensión del \( \lambdacalculus \) denominada \textit{\( \lambdacalculus \) simplemente tipado} con el objetivo de evitarla. Esta interpretación del \( \lambdacalculus \) introduce un \textit{sistema de tipos}, mediante el cual se pueden derivar tipos para los términos, y aquellos para los cuales las reglas de tipado no permitan asignarle alguno, son excluidos del modelo. En particular, los términos que en el \( \lambdacalculus \) original introducían la paradoja de Curry no pueden ser tipados en el \( \lambdacalculus \) simplemente tipado, y por lo tanto, la paradoja no se manifiesta. Cuando un modelo no admite ese tipo de términos, se dice que tiene la propiedad de \textit{normalización fuerte}.
+
+% Otras propiedades interesantes: type-safety y terminación.
+Aparte de las motivaciones desde la lógica, otra de las razones por las cuales resulta interesante introducir un sistema de tipos es porque estos contribuyen a la correctitud del programa, ya que permiten detectar errores comunes en tiempo de compilación, y por ende evitarlos por completo en tiempo de ejecución. Por otra parte, si bien la propiedad de normalización fuerte hace que el lenguaje deje de ser Turing-completo, dicha propiedad garantiza que todo programa eventualmente termine, algo que resulta de mucha utilidad ya que asegura que no existirán loops infinitos.
+
+% Otros fenómenos a evitar: clonado en el mundo subatómico.
+Ahora bien, existen contextos en los cuales necesitamos evitar otra clase de fenómenos. Es el caso del mundo subatómico, en el cual las leyes de la mecánica cuántica imponen ciertas restricciones sobre qué puede y qué no puede computarse. Por ejemplo, dado un electrón en cierto estado desconocido, es imposible construir un mecanismo que nos permita copiar ese estado sobre otro electrón~\cite{wootters, dieks}. Sin embargo, tanto el \( \lambdacalculus \) no tipado como el simplemente tipado sí permiten copiar valores. Con el objetivo de preservar esta ley fundamental, se han propuesto diferentes lenguajes.
+
+% Evitando el clonado: lenguajes AL y LL.
+Por un lado tenemos la familia de los lenguajes que utilizan lógica lineal (LL)~\cite{abramsky}, los cuales implementan un sistema de tipos que excluyen los términos que copian estados (ejemplos~\cite{altenkirch, selinger, zorzi}), de manera similar a como el \( \lambdacalculus \) simplemente tipado utiliza un sistema de tipos para garantizar la propiedad de normalización fuerte. Por otra parte, tenemos la familia de los lenguajes que utilizan propiedades del álgebra lineal (AL), los cuales admiten los términos que los otros excluyen, pero modifican las reglas que se pueden aplicar sobre ellos, evitando de esa forma la copia de estados (ejemplos~\cite{arrighi, arrighi2, arrighi3, arrighi4, assaf}).
+
+% Tomando lo mejor de los lenguajes AL y LL: lambda_S.
+Los lenguajes AL tienen la ventaja de que, al utilizar un sistema de tipos clásicos, son más sencillos que los LL.\@ Sin embargo, tienen una desventaja fundamental en el contexto de la mecánica cuántica, ya que no son capaces de modelar fácilmente la operación de medir el estado de un electrón~\cite{valiron}, algo que los lenguajes LL pueden hacer de manera sencilla. Es por este motivo que Díaz-Caro y Dowek propusieron crear un lenguaje que tenga lo mejor de los dos mundos: la simpleza de los lenguajes AL y el soporte para el operador de medición de los lenguajes LL~\cite{qmeas}. A este nuevo lenguaje lo llamaron \( \lambdas \).
+
+% Objetivo de la tesis: normalización fuerte de lambda_S.
+Si bien \( \lambdas \) evita de manera elegante la copia de estados, cabe preguntarse si hace lo mismo con la paradoja de Curry, es decir, si posee la propiedad de normalización fuerte. En este trabajo, vamos demostrar que efectivamente es así.
+
+\subsection*{Estructura de la tesina}
+En el capítulo 2, introducimos conceptos preliminares de computación cuántica y \( \lambdacalculus \). En el capítulo 3, demostramos que el \( \lambdacalculus \) simplemente tipado posee la propiedad de normalización fuerte, con el objetivo de introducir las técnicas que luego utilizaremos para probar la existencia de dicha propiedad en \( \lambdas \). En el capítulo 4, introducimos \( \lambdas \). En el capítulo 5, probamos que \( \lambdas \) posee la propiedad de normalización fuerte. Finalmente, en el capítulo 6 hacemos un resumen de los aportes y mencionamos un posible trabajo futuro.

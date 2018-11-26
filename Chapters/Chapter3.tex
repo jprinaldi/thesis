@@ -1,0 +1,182 @@
+\chapter{Normalización fuerte del \texorpdfstring{\( \lambdacalculus \)}{lambda calculus} simplemente tipado}\label{Chapter3}
+
+Vamos a probar que el \( \lambdacalculus \) simplemente tipado posee la propiedad de normalización fuerte, con el objetivo de introducir las técnicas que luego utilizaremos para probar dicha propiedad sobre \( \lambdas \). Esta demostración se basa en la demostración de Tait~\cite{tait}.
+
+Si bien este capítulo se enfoca en el \( \lambdacalculus \) simplemente tipado, en las siguientes definiciones vamos a dar algunos ejemplos del \( \lambdacalculus \) no tipado, con el objetivo de resaltar algunas de las diferencias entre estos dos cálculos en el contexto de la normalización fuerte.
+
+\begin{definition}
+  Llamamos \textit{secuencia de reducción} que comienza en \( t \) a una secuencia de términos \( s_1, s_2, \dots \), con \( s_1 = t \) tal que para todo \( s_i, s_{i + 1} \) en la secuencia, \( s_i \reducesto s_{i + 1} \).
+\end{definition}
+Por ejemplo, \( \lcapp{\lcabstr{y}{\lcapp{\lcabstr{x}{x + y}}{5}}}{6} \), \( \lcapp{\lcabstr{y}{5 + y}}{6} \), \( 5 + 6 \), \( 11 \) es una secuencia de reducción que comienza en \( \lcapp{\lcabstr{y}{\lcapp{\lcabstr{x}{x + y}}{5}}}{6} \),
+dado que
+\[ \lcapp{\lcabstr{y}{\lcapp{\lcabstr{x}{x + y}}{5}}}{6} \reducesto \lcapp{\lcabstr{y}{5 + y}}{6} \reducesto 5 + 6 \reducesto 11 \]
+
+\begin{definition}
+  Decimos que un término \( t \) es \textit{fuertemente normalizante} cuando no existe una secuencia de reducción infinita que comience en \( t \).
+\end{definition}
+
+Por ejemplo, en el \( \lambdacalculus \) no tipado, \( \lcapp{ \lcabstr{x}{\lcapp{x}{x}} }{ \lcabstr{x}{\lcapp{x}{x}} } \) no es un término fuertemente normalizante, ya que como vimos, existe una secuencia de reducción infinita que comienza en dicho término. Por otra parte, el término \( \lcapp{\lcabstr{y}{\lcapp{\lcabstr{x}{x + y}}{5}}}{6} \) es fuertemente normalizante ya que cualquier estrategia de reducción termina en \( 11 \) y de ahí no se puede seguir reduciendo.
+
+\begin{definition}
+  Dado un término fuertemente normalizante \( t \), notamos \( \lpl{t} \) a la longitud de la secuencia de reducción más larga que comienza en \( t \).
+\end{definition}
+
+Por ejemplo, \( \lpl{\lcapp{\lcabstr{y}{\lcapp{\lcabstr{x}{x + y}}{5}}}{6}} = 4 \) y \( \lpl{11} = 1 \).
+Por otra parte,
+\[  \lpl{\lcapp{\lcabstr{x}{\lcapp{x}{x}}}{\lcabstr{x}{\lcapp{x}{x}}}}
+\]
+no está definido, dado que \( \lcapp{ \lcabstr{x}{\lcapp{x}{x}} }{ \lcabstr{x}{\lcapp{x}{x}} } \) no es fuertemente normalizante.
+
+\begin{definition}
+  Definimos como \( \snset \) al \textit{conjunto de términos fuertemente normalizantes}. Formalmente:
+  \[ \snset = \{ t \mid \exists \lpl{t} \} \]
+\end{definition}
+
+Por ejemplo, en el \( \lambdacalculus \) no tipado, \( \lcabstr{x}{x} \in \snset \) y \( \lcapp{\lcabstr{y}{5 + y}}{6} \in \snset \) mientras que \( \lcapp{ \lcabstr{x}{\lcapp{x}{x}} }{ \lcabstr{x}{\lcapp{x}{x}} } \notin \snset \).
+
+En el caso del \( \lambdacalculus \) simplemente tipado, vamos a mostrar que todos los términos están en \( \snset \).
+
+\begin{definition}
+  Definimos como \( \red{t} \) al conjunto de reductos de \( t \) en un paso. Formalmente:
+  \[ \red{t} = \{r \mid t \reducesto r\} \]
+\end{definition}
+
+Por ejemplo,
+\( \red{\lcapp{\lcabstr{y}{\lcapp{\lcabstr{x}{x + y}}{5}}}{6}} = \{\lcapp{\lcabstr{y}{5 + y}}{6}, \lcapp{\lcabstr{x}{x + 6}}{5}\} \),
+ya que existen dos reglas de reducción que podemos aplicar sobre \( \lcapp{\lcabstr{y}{\lcapp{\lcabstr{x}{x + y}}{5}}}{6} \) (la \( \beta \)-reducción normal o la regla contextual).
+Por otra parte, \( 5 + 6 \notin \red{\lcapp{\lcabstr{y}{\lcapp{\lcabstr{x}{x + y}}{5}}}{6}} \), ya que se necesitan de dos reducciones para llegar a \( 5 + 6 \).
+
+A partir de aquí, vamos a hablar estrictamente del \( \lambdacalculus \) simplemente tipado.
+
+Ahora vamos a introducir el concepto fundamental de la técnica de Tait para probar normalización fuerte: \textit{reducibilidad}. La idea es introducir una serie de conjuntos de términos muy particulares asociados a cada tipo, definidos de forma tal que se pueda probar que si un término pertenece a dicho conjunto, entonces es fuertemente normalizante. Luego, basta con probar que todo término pertenece al conjunto asociado a su tipo para concluir que todos los términos son fuertemente normalizantes.
+
+\begin{definition}
+  Dado un tipo \( A \), definimos \( \interp{A} \) (leído como \textit{interpretación de A}) inductivamente de la siguiente forma:
+  \begin{equation*}
+    \begin{split}
+      \interp{\tau} & = \snset \\
+      \interp{\Psi \Rightarrow A} & = \{ t \mid \forall r \in \interp{\Psi}, \stlcapp{t}{r} \in \interp{A} \}
+    \end{split}
+  \end{equation*}
+
+  Si \( t \in \interp{A} \), decimos que \( t \) es \textit{reducible}.
+\end{definition}
+
+A continuación, vamos a enunciar y probar una serie de propiedades fundamentales del concepto de reducibilidad.
+
+Notar que la propiedad CR1 del Lema~\ref{lem:cr-stlc} probará el cierre del conjunto por reducción, y sería interesante poder probar el cierre por antirreducción, es decir, si \( \red{t} \subseteq \interp{A} \) entonces \( t \in \interp{A} \). Sin embargo, probar esto para el caso general es muy difícil. Es por este motivo que Girard~\cite{girard-thesis} introdujo el concepto de \textit{neutralidad}. La idea es que no necesitamos probar la propiedad para el caso general, sino solo para los casos que nos interesan. En efecto, solo necesitamos esta propiedad para las aplicaciones, y para este subconjunto de términos, la prueba es más sencilla.
+
+\begin{definition}
+  Llamamos \( \neutralset \) al conjunto de términos \textit{neutrales} compuesto únicamente por las aplicaciones: si \( t \) y \( r \) son términos, entonces \( \stlcapp{t}{r} \in \neutralset \).
+\end{definition}
+
+\begin{lemma}\label{lem:cr-stlc}
+  Para todo tipo \( A \), se cumplen las siguientes propiedades:
+  \begin{description}
+    \item[(CR1)] \( \interp{A} \subseteq \snset \)
+    \item[(CR2)] Si \( t \in \interp{A} \), entonces \( \red{t} \subseteq \interp{A} \).
+    \item[(CR3)] Si \( t \in \neutralset \) y \( \red{t} \subseteq \interp{A} \) entonces \( t \in \interp{A} \).
+    \item[(HAB)] Para todo \( x \), \( x \in \interp{A} \).
+  \end{description}
+\end{lemma}
+
+\begin{proof}
+  Procedemos por inducción estructural sobre \( A \):
+  \subsection*{\( A = \tau \)}
+    \begin{itemize}
+      \item CR1
+        \\ Por definición, \( \interp{\tau} = \snset \), por lo que efectivamente \( \interp{\tau} \subseteq \snset \).
+      \item CR2
+        \\ Dado \( t \in \interp{\tau} \), queremos mostrar que \( \red{t} \in \interp{\tau} \). Por definición, \( \interp{\tau} = \snset \), por lo que \( t \in \snset \), y por lo tanto, \( \red{t} \subseteq \snset = \interp{\tau} \), que es lo que queríamos mostrar.
+      \item CR3
+        \\ Dado \( t \in \neutralset \) donde \( \red{t} \subseteq \interp{\tau} \), queremos mostrar que \( t \in \interp{\tau} \). Por definición de \( \interp{\tau} \), esto equivale a mostrar que \( t \in \snset \).
+        \\ Como \( \red{t} \subseteq \interp{\tau} = \snset \), tenemos que \( t \in \snset \), que es lo que queríamos mostrar.
+      \item HAB
+        \\ Dado \( x \), queremos mostrar que \( x \in \interp{\tau} \). Como \( x \in \snset \), tenemos por definición de \( \interp{\tau} \) que \( x \in \interp{\tau} \), que es lo que queríamos mostrar.
+    \end{itemize}
+  \subsection*{\( A = \Psi \Rightarrow B \)}
+    \begin{itemize}
+      \item CR1
+        \\ Dado \( t \in \interp{\Psi \Rightarrow B} \), queremos mostrar que \( t \in \snset \).  Sea \( r \in \interp{\Psi} \) (notar que por hipótesis de inducción (HAB), tal \( r \) existe). Por definición, tenemos que \( \stlcapp{t}{r} \in \interp{B} \).
+        Y por hipótesis de inducción, tenemos que \( \stlcapp{t}{r} \in \snset \), es decir, \( \lpl{\stlcapp{t}{r}} \) es finito.
+        Y como \( \lpl{t} \leq \lpl{\stlcapp{t}{r}} \), tenemos que \( \lpl{t} \) es finito, y por lo tanto, \( t \in \snset \).
+      \item CR2
+        \\ Dado \( t \in \interp{\Psi \Rightarrow B} \), queremos mostrar que \( \red{t} \in \interp{\Psi \Rightarrow B} \). Si \( \red{t} = \emptyset \), ya estamos. Si no, sea \( t' \in \red{t} \) y \( r \in \interp{\Psi} \).
+        Luego \( \stlcapp{t}{r} \in \interp{B} \). Y como \( \stlcapp{t'}{r} \in \red{\stlcapp{t}{r}} \), tenemos por hipótesis de inducción que \( \stlcapp{t'}{r} \in \interp{B} \).
+        Luego \( t' \in \interp{\Psi \Rightarrow B} \), que es lo que queríamos mostrar.
+      \item CR3
+        \\ Dado \( t \in \neutralset \) donde \( \red{t} \subseteq \interp{\Psi \Rightarrow B} \), queremos mostrar que \( t \in \interp{\Psi \Rightarrow B} \). Sea \( r \in \interp{\Psi} \). Queremos mostrar que \( \stlcapp{t}{r} \in \interp{B} \). Por hipótesis de inducción, basta con mostrar que \( \red{\stlcapp{t}{r}} \subseteq \interp{B} \).
+        Como \( r \in \interp{\Psi} \), tenemos por hipótesis de inducción (CR1) que \( r \in \snset \), es decir, \( \lpl{r} \) existe. Por lo tanto, podemos proceder por inducción (2) sobre \( \lpl{r} \).
+        Analizamos los posibles reductos de \( \stlcapp{t}{r} \):
+        \begin{itemize}
+          \item \( \stlcapp{t}{r} \reducesto \stlcapp{t'}{r} \) donde \( t \reducesto t' \)
+            \\ Como \( t' \in \red{t} \), tenemos que \( t' \in \interp{\Psi \Rightarrow B} \). Y como \( r \in \interp{\Psi} \), tenemos por definición que \( \stlcapp{t'}{r} \in \interp{B} \), que es lo que queríamos mostrar.
+          \item \( \stlcapp{t}{r} \reducesto \stlcapp{t}{r'} \) donde \( r \reducesto r' \)
+            \\ Como \( r \in \interp{\Psi} \), tenemos por hipótesis de inducción (CR2) que \( r' \in \interp{\Psi} \). Y como \( \lpl{r'} < \lpl{r} \), tenemos por hipótesis de inducción 2 que \( \stlcapp{t}{r'} \in \interp{B} \), que es lo que queríamos mostrar.
+        \end{itemize}
+        Notar que no puede haber una \( \beta \)-reducción a la cabeza ya que \( t \in \neutralset \), y por definición, las abstracciones no son parte de \( \neutralset \). Este es precisamente el caso difícil que el concepto de neutralidad evita y el motivo por el cual la prueba se simplifica.
+      \item HAB
+        \\ Dado \( x \), queremos mostrar que \( x \in \interp{\Psi \Rightarrow B} \). Por definición de \( \interp{\Psi \Rightarrow B} \), basta con mostrar que, para todo \( t \in \interp{\Psi} \), tenemos que \( \stlcapp{x}{t} \in \interp{B} \).
+        \\ Sea \( t \in \interp{\Psi} \). Por hipótesis de inducción (CR1), tenemos que \( t \in \snset \). Por lo tanto, podemos proceder por inducción (2) sobre \( \lpl{t} \):
+        \begin{itemize}
+          \item \( \lpl{t} = 1 \)
+            \\ En este caso, \( \red{t} = \emptyset \) y por hipótesis de inducción (CR3) tenemos que \( \stlcapp{x}{t} \in \interp{B} \), que es lo que queríamos mostrar.
+          \item \( \lpl{t} > 1 \)
+            \\ Sea \( \stlcapp{x}{t'} \) tal que \( t \reducesto t' \). Por hipótesis de inducción (2), \( \stlcapp{x}{t'} \in \interp{B} \), es decir, \( \red{\stlcapp{x}{t}} \subseteq \interp{B} \).
+            Y como \( \stlcapp{x}{t} \in \neutralset \), tenemos por hipótesis de inducción (CR3) que \( \stlcapp{x}{t} \in \interp{B} \), que es lo que queríamos mostrar.
+            \qedhere
+        \end{itemize}
+    \end{itemize}
+\end{proof}
+
+% Ya habiendo probado el teorema de adecuación, vamos a probar que las variables pertenecen a la interpretación de cualquier tipo, lo cual nos permitirá afirmar que la substitución trivial \textsf{Id}, que sustituye cada variable por sí misma, cumple \( \mathsf{Id} \models \Gamma \) para todo \( \Gamma \).
+
+Si podemos probar que todos los términos pertenecen a la interpretación de su tipo (es decir, son reducibles), entonces por Lema~\ref{lem:cr-stlc} (CR1) vamos a tener que todos los términos son fuertemente normalizantes. Esto es lo que vamos a hacer a continuación.
+
+\begin{definition}
+  Notamos \( \theta = [r_1/x_1, \ldots, r_n/x_n] \) a las sustituciones de variables por términos, donde cada variable se sustituye por el correspondiente término de manera simultánea.\\
+  Dado \( \theta = [r_1/x_1, \ldots, r_k/x_k] \) y \( \theta' = [r_{k + 1}/x_{k + 1}, \ldots, r_n/x_n] \), notamos \( \theta \cup \theta' \) a la sustitución \( [r_1/x_1, \ldots, r_n/x_n] \).\\
+  Dado \( \theta \), escribimos \( \theta \models \Gamma \) si para todo \( x : A \in \Gamma \) tenemos que \( \theta(x) \in \interp{A} \). Por otra parte, si \( y \) no está en \( \Gamma \), \( \theta(y) = y \).
+\end{definition}
+
+\begin{lemma}[Adecuación]\label{lem:adequacy-stlc}
+  Si \( \Gamma \vdash t:A \) y \( \theta \models \Gamma \) entonces \( \theta(t) \in \interp{A} \).
+\end{lemma}
+
+\begin{proof}
+  Procedemos por inducción estructural sobre la derivación de \( \Gamma \vdash t : A \):
+  \begin{itemize}
+    \item \( \infer{\Gamma \vdash x : A}{x : A \in \Gamma} \)
+      \\ Trivial.
+    \item \( \infer{\Gamma \vdash \abstr{x : A}{t} : A \Rightarrow B}{\Gamma, x : A \vdash t : B} \)
+      \\ Nuestra hipótesis de inducción dice que si \( \theta \models \Gamma, x : A \), entonces \( \theta(t) \in \interp{B} \).
+      Queremos mostrar que si \( \theta' \models \Gamma \), entonces \( \theta'(\abstr{x : A}{t}) = (\abstr{x : A}{\theta'(t)}) \in \interp{A \Rightarrow B} \), o lo que es lo mismo, para todo \( r \in \interp{A}, \app{(\abstr{x : A}{\theta'(t)})}{r} \in \interp{B} \).
+      \\ Como \( \app{(\abstr{x : A}{\theta'(t)})}{r} \in \neutralset \), el Lema~\ref{lem:cr-stlc} (CR3) nos dice que si \( \red{\app{(\abstr{x : A}{\theta'(t)})}{r}} \subseteq \interp{B} \), entonces \( \app{(\abstr{x : A}{\theta'(t)})}{r} \in \interp{B} \). Vamos a mostrar que efectivamente \( \red{\app{(\abstr{x : A}{\theta'(t)})}{r}} \subseteq \interp{B} \).
+      \\ Como \( \theta'(t) = (\theta' \circ [x/x])(t) \) y \( (\theta' \circ [x/x]) \models \Gamma, x : A \), tenemos por hipótesis de inducción que \( \theta'(t) \in \interp{B} \). Y como \( r \in \interp{A} \), tenemos por Lema~\ref{lem:cr-stlc} (CR2) que ambos términos son fuertemente normalizantes. Por lo tanto, podemos proceder por inducción (2) sobre \( |\theta'(t)| + |r| \). Analizamos cada uno de los reductos de \( \app{(\abstr{x : A}{\theta'(t)})}{r} \):
+      \begin{itemize}
+        \item \( \app{(\abstr{x : A}{\theta'(t)})}{r} \reducesto \theta'(t)[r/x] \)
+        \\ Queremos mostrar que \( \theta'(t)[r/x] \in \interp{B} \). Por definición, \( \theta'(t)[r/x] = (\theta' \circ [r/x])(t) \), y como \( r \in \interp{A} \), tenemos \( (\theta' \circ [r/x]) \models \Gamma, x:A \). Por lo tanto, por hipótesis de inducción, tenemos que \( \theta'(t)[r/x] \in \interp{B} \), que es lo que queríamos mostrar.
+        \item \( \app{(\abstr{x : A}{\theta'(t)})}{r} \reducesto \theta(\abstr{x : A}{s}) r \) donde \( \theta'(t) \reducesto s \)
+        \\ Queremos mostrar que \( \app{(\abstr{x : A}{s})}{r} \in \interp{B} \). Por hipótesis de inducción 2, \( \app{(\abstr{x : A}{s})}{r} \in \interp{B} \), que es lo que queríamos mostrar.
+        \item \( \app{(\abstr{x : A}{\theta'(t)})}{r} \reducesto \app{(\abstr{x : A}{\theta'(t)})}{r'} \)
+        \\ Queremos mostrar que \( \app{(\abstr{x : A}{\theta'(t)})}{r'} \in \interp{B} \). Por hipótesis de inducción 2, \( \app{(\abstr{x : A}{\theta'(t)})}{r'} \in \interp{B} \), que es lo que queríamos mostrar.
+      \end{itemize}
+    \item \( \infer{\Gamma \vdash \app{t}{r} : B}{\Gamma \vdash t : A \Rightarrow B & \Gamma \vdash r : A} \)
+      \\ Nuestra hipótesis de inducción dice que si \( \theta \models \Gamma \), entonces \( \theta(t) \in \interp{A \Rightarrow B} \) y \( \theta(u) \in \interp{A} \).
+      Queremos mostrar que si \( \theta \models \Gamma \), entonces \( \theta(\app{t}{u}) = \app{\theta(t)}{\theta(u)} \in \interp{B} \).
+      \\ Por hipótesis de inducción y definición de \( \interp{A \Rightarrow B} \), tenemos que \( \app{\theta(t)}{\theta(u)} \in \interp{B} \), que es lo que queríamos mostrar.
+      \qedhere
+  \end{itemize}
+\end{proof}
+
+Ahora estamos en condiciones de probar el teorema de normalización fuerte.
+
+\begin{theorem}[Normalización fuerte]
+  Si \( \Gamma \vdash t : A \), entonces \( t \in \snset \).
+\end{theorem}
+
+\begin{proof}
+  Por Lema~\ref{lem:adequacy-stlc}, si \( \theta \models \Gamma \) entonces \( \theta(t) \in \interp{A} \). Por otra parte, por Lema~\ref{lem:cr-stlc} (CR1), tenemos que \( \interp{A} \subseteq \snset \).
+  Finalmente, por Lema~\ref{lem:cr-stlc} (HAB), tenemos que \( \mathsf{Id} \models \Gamma \).
+  Por lo tanto, \( \mathsf{Id}(t) = t \in \snset \), que es lo que queríamos mostrar.
+\end{proof}

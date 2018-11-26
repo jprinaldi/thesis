@@ -1,0 +1,32 @@
+https://github.com/juampi/thesis/compare/784ec55a35b5462d7a4234f3c557a243b72aea85...7e2c67a91cfdd4abdf7a9e90c872ffe47c95f688
+
+Capítulo 2
+- Se agregaron las reglas contextuales del lambda cálculo simplemente tipado.
+
+Capítulo 3
+- Se unieron los lemas CR1-3 junto con el lema de variables (ahora denominado HAB) en uno solo, y se realizó una prueba simultánea. Esto permitió que se pueda justificar la existencia de elementos en ciertos conjuntos.
+- Se corrigió un typo relacionado a theta en el caso 2, subcaso 1 del lema de adecuación.
+
+Capítulo 4
+- Se modificó la notación de las abstracciones para que quede consistente con la utilizada para el lambda cálculo simplemente tipado.
+- Se agregó una definición formal del concepto de "término", y varias aclaraciones a lo largo del capítulo, para que quede claro que solo se consideran términos bien tipados.
+- Se corrigió un typo en la gramática de términos relacionado al operador de if-then-else.
+- Se agregaron de forma explícita las reglas de reflexividad y transitividad a la relación de subtipado, las cuales previamente se daban por asumidas.
+- Se explicitó la forma del sistema de tipos.
+- Se explicitó que Gamma y Delta son disjuntos en el sistema de tipos.
+- Se estandarizó la notación utilizada para las sustituciones de variables.
+- Se agregó la regla de asociatividad del producto cartesiano al sistema de reescritura.
+- Se agregó una aclaración acerca de que los p de las reducciones no son importantes para la demostración de normalización fuerte.
+
+Capítulo 5
+- Se explicitaron las reglas de reducción utilizadas en la prueba del lema del size.
+- Se agregaron varias aclaraciones a lo largo del capítulo, para que quede claro que solo se consideran términos bien tipados.
+- Se corrigió un typo en la definición de conjuntos de reducibilidad.
+- Se unieron los lemas CR1-3 junto con el lema de variables (ahora denominado HAB) en uno solo, y se realizó una prueba simultánea. Esto permitió que se pueda justificar la existencia de elementos en ciertos conjuntos.
+- Se mejoró la redacción de las pruebas de los lemas CR1-3 y HAB.
+- Se corrigió el enunciado del lema de subtipado de productos cartesianos.
+- Se agregó un lema explicitando una propiedad del subtipado de tipos flecha.
+- Se agregaron los casos de reflexividad y transitividad a la prueba del lema de compatibilidad con el subtipado.
+- Se simplificaron dos casos de la prueba del lema de compatibilidad con el subtipado que eran similares.
+- Se definió formalmente la sustitución de variables theta, explicitando el hecho de que la sustitución se realiza de manera secuencial.
+- Se reescribieron algunos casos del lema de adecuación para que sean más sencillos de entender.

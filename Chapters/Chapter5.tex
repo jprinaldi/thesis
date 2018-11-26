@@ -1,0 +1,856 @@
+\chapter{Normalización fuerte de \texorpdfstring{\( \lambdas \)}{Lambda S}}\label{Chapter5}
+
+Para demostrar que \( \lambdas \) posee la propiedad de normalización fuerte, vamos a utilizar el método de Tait (ver Capítulo 3).
+
+Primero enunciamos un teorema que nos dice que la reducción preserva tipos, algo que nos será de mucha utilidad.
+
+\newcommand\citedsr{\cite[Teo. 4.4]{qmeas}}
+
+\begin{theorem}[Subject reduction, \citedsr]\label{thm:subject-reduction}
+  Para cualesquiera términos cerrados \( t \) y \( u \) y tipo \( A \), si \( t \reducesto u \) y \( \vdash t : A \), entonces \( \vdash u : A \).
+  \qed
+\end{theorem}
+
+El siguiente reusltado se deja como conjetura por falta de tiempo. La prueba de dicha conjetura se deja como trabajo futuro.
+
+\begin{conjecture}[Weak subject expansion]\label{cnj:subject-expansion}
+  Si \( \Gamma \vdash t' : A \) para todo \( t' \in \red{t} \), entonces \( \Gamma \vdash t : A \).
+\end{conjecture}
+
+Ahora definimos una noción de \textit{tamaño} para los términos, de forma tal que cada vez que apliquemos una regla de reducción algebraica, dicho tamaño se reduzca. Este concepto nos será de utilidad en varias demostraciones, ya que nos permitirá realizar análisis inductivos.
+
+\begin{definition}
+  Llamamos \( \size{t} \) el \textit{tamaño} del término \( t \), definido inductivamente de la siguiente forma:
+  \begin{equation*}
+    \begin{split}
+      \size{x} & = 0 \\
+      \size{\nullvec{A}} & = 0 \\
+      \size{\ket{0}} & = 0 \\
+      \size{\ket{1}} & = 0 \\
+      \size{\abstr{\vrbl{x}{\Psi}}{u}} & = \size{u} \\
+      \size{u + v} & = \size{u} + \size{v} + 2 \\
+      \size{\alpha . u} & = 2 \size{u} + 1 \\
+      \size{\app{u}{v}} & = (3 \size{u} + 2)(3 \size{v} + 2) \\
+      \size{u \times v} & = \size{u} + \size{v} \\
+      \size{\head{u}} & = \size{u} + 1 \\
+      \size{\tail{u}} & = \size{u} + 1 \\
+      \size{\proj{j}{u}} & = \size{u} \\
+      \size{\ifte{}{v}{w}} & = \size{v} + \size{w} \\
+      \size{\cast{S(A)}{S(B)} u} & = \size{u}
+    \end{split}
+  \end{equation*}
+\end{definition}
+
+Por ejemplo:
+\begin{equation*}
+  \begin{split}
+    \size{ \frac{1}{\sqrt{2}} . (\ket{0} + \ket{1}) }
+    & = 2 \size{ \ket{0} + \ket{1} } + 1 \\
+    & = 2 (\size{\ket{0}} + \size{\ket{1}} + 2) + 1 \\
+    & = 5
+  \end{split}
+\end{equation*}
+
+Por otra parte, como
+\[ \frac{1}{\sqrt{2}} . (\ket{0} + \ket{1}) \reducesto \frac{1}{\sqrt{2}} . \ket{0} + \frac{1}{\sqrt{2}} \ket{1} \]
+deberíamos tener que
+\[ \size{\frac{1}{\sqrt{2}} . (\ket{0} + \ket{1})} > \size{\frac{1}{\sqrt{2}} . \ket{0} + \frac{1}{\sqrt{2}} \ket{1}} \]
+
+Y efectivamente así es:
+\begin{equation*}
+  \begin{split}
+    \size{ \frac{1}{\sqrt{2}} . \ket{0} + \frac{1}{\sqrt{2}} \ket{1} }
+    & = \size{ \frac{1}{\sqrt{2}} . \ket{0} } + \size{ \frac{1}{\sqrt{2}} . \ket{1} } + 2 \\
+    & = 2 \size{\ket{0}} + 1 + 2 \size{\ket{1}} + 1 + 2 \\
+    & = 4
+  \end{split}
+\end{equation*}
+
+A continuación, vamos a demostrar que esta propiedad se cumple sobre un subconjunto de reglas de reducción particular. No es verdad en el caso general, de otra forma sería una prueba de normalización fuerte. De todas formas, nos es suficiente con que se cumpla sobre un subconjunto de ellas que contiene las reglas que necesitamos para poder completar las demostraciones.
+
+\begin{lemma}\label{lem:size}
+  La definición de tamaño cumple las siguientes propiedades:
+  \begin{itemize}
+    \item Si \( t \reducesto r \), con alguna de las reglas pertenecientes a los subconjuntos de distribuciones lineales, axiomas de espacios vectoriales o listas, exceptuando la regla \textsf{null}, entonces \( \size{t} > \size{r} \).
+    \item Si \( t =_{AC} r \), entonces \( \size{t} = \size{r} \).
+  \end{itemize}
+\end{lemma}
+
+\begin{proof}
+  Para la primera parte, procedemos por inducción sobre las reglas de reducción:
+  \begin{itemize}
+    \item Casos base:
+      \begin{itemize}
+        \item \( \app{t}{(u + v)} \xrightarrow{\mathsf{lin}_r^+} \app{t}{u} + \app{t}{v} \)
+        \begin{equation*}
+          \begin{split}
+            \size{\app{t}{(u + v)}}
+            & = (3 \size{t} + 2)(3 \size{u + v} + 2) \\
+            & = (3 \size{t} + 2)(3 (2 + \size{u} + \size{v}) + 2) \\
+            & = (3 \size{t} + 2)(8 + 3 \size{u} + 3 \size{v}) \\
+            & = 4 (3 \size{t} + 2) + (3 \size{t} + 2)(4 + 3 \size{u} + 3 \size{v}) \\
+            & = 12 \size{t} + 8 + (3 \size{t} + 2)(4 + 3 \size{u} + 3 \size{v}) \\
+            & = 12 \size{t} + 8 + (3 \size{t} + 2)((3 \size{u} + 2) + (3 \size{v} + 2)) \\
+            & = 12 \size{t} + 8 + (3 \size{t} + 2)(3 \size{u} + 2) + (3 \size{t} + 2)(3 \size{v} + 2) \\
+            & = 12 \size{t} + 8 + \size{\app{t}{u}} + \size{\app{t}{v}} \\
+            & = 12 \size{t} + 6 + \size{\app{t}{u} + \app{t}{v}} \\
+            & > \size{\app{t}{u} + \app{t}{v}}
+          \end{split}
+        \end{equation*}
+        \item \( \app{t}{(\alpha . u)} \xrightarrow{\mathsf{lin}_r^\alpha} \alpha . \app{t}{u} \)
+        \begin{equation*}
+          \begin{split}
+            \size{\app{t}{(\alpha . u)}}
+            & = (3 \size{t} + 2)(3 \size{\alpha . u} + 2) \\
+            & = (3 \size{t} + 2)(3 (1 + 2 \size{u}) + 2) \\
+            & = (3 \size{t} + 2)(6 \size{u} + 5) \\
+            & = 3 \size{t} + 2 + (3 \size{t} + 2)(6 \size{u} + 4) \\
+            & = 3 \size{t} + 2 + 2 (3 \size{t} + 2)(3 \size{u} + 2) \\
+            & = 3 \size{t} + 2 + 2 \size{\app{t}{u}} \\
+            & = 3 \size{t} + 1 + \size{\alpha . \app{t}{u}} \\
+            & > \size{\alpha . \app{t}{u}}
+          \end{split}
+        \end{equation*}
+        \item \( \app{t}{\nullvec{\qubittype}} \xrightarrow{\mathsf{lin}_r^0} \nullvec{A} \)
+        \begin{equation*}
+          \begin{split}
+            \size{\app{t}{\nullvec{\qubittype}}}
+            & = (3 \size{t} + 2) (3 \size{\nullvec{\qubittype}} + 2) > 0 = \size{\nullvec{A}}
+          \end{split}
+        \end{equation*}
+        \item \( \app{(t + u)}{v} \xrightarrow{\mathsf{lin}_l^+} \app{t}{v} + \app{u}{v} \)
+        \begin{equation*}
+          \begin{split}
+            \size{\app{(t + u)}{v}}
+            & = (3 \size{t + u} + 2)(3 \size{v} + 2) \\
+            & = (3 (2 + \size{t} + \size{u}) + 2)(3 \size{v} + 2) \\
+            & = (3 \size{t} + 3 \size{u} + 8)(3 \size{v} + 2) \\
+            & = (3 \size{t} + 3 \size{u} + 4)(3 \size{v} + 2) + 4 (3 \size{v} + 2) \\
+            & = ((3 \size{t} + 3 \size{u} + 4)(3 \size{v} + 2) + 2) + 12 \size{v} + 6 \\
+            & = \size{\app{t}{v} + \app{u}{v}} + 12 \size{v} + 6 \\
+            & > \size{\app{t}{v} + \app{u}{v}}
+          \end{split}
+        \end{equation*}
+        \item \( \app{(\alpha . t)}{u} \xrightarrow{\mathsf{lin}_l^\alpha} \alpha . \app{t}{u} \)
+        \begin{equation*}
+          \begin{split}
+            \size{\app{(\alpha . t)}{u}}
+            & = (3 \size{\alpha . t} + 2)(3 \size{u} + 2) \\
+            & = (3 (1 + 2 \size{t}) + 2)(3 \size{u} + 2) \\
+            & = (6 \size{t} + 5)(3 \size{u} + 2) \\
+            & = (6 \size{t} + 4)(3 \size{u} + 2) + (3 \size{u} + 2) \\
+            & = 2 (3 \size{t} + 2)(3 \size{u} + 2) + 3 \size{u} + 2 \\
+            & = \size{\alpha . \app{t}{u}} + 3 \size{u} + 1 \\
+            & > \size{\alpha . \app{t}{u}}
+          \end{split}
+        \end{equation*}
+        \item \( \app{\nullvec{\qubittype \Rightarrow A}}{t} \xrightarrow{\mathsf{lin}_l^0} \nullvec{A} \)
+        \begin{equation*}
+          \size{\app{\nullvec{\qubittype \Rightarrow A}}{t}} = (3 \size{\nullvec{\qubittype \Rightarrow A}} + 2)(3 \size{t} + 2) = 6 \size{t} + 4 > 0 = \size{\nullvec{A}}
+        \end{equation*}
+        \item \( \nullvec{A} + t \xrightarrow{\mathsf{neutral}} t \)
+        \begin{equation*}
+          \size{\nullvec{A} + t} = 2 + \size{\nullvec{A}} + \size{t} = 2 + \size{t} > \size{t}
+        \end{equation*}
+        \item \( 1 . t \xrightarrow{\mathsf{unit}} t \)
+        \begin{equation*}
+          \size{1 . t} = 1 + 2 \size{t} > \size{t}
+        \end{equation*}
+        \item \( 0 . t \xrightarrow{\mathsf{zero}_\alpha} \nullvec{A} \)
+        \begin{equation*}
+          \size{0. t} = 1 + 2 \size{t} > 0 = \size{\nullvec{A}}
+        \end{equation*}
+        \item \( \alpha . \nullvec{A} \xrightarrow{\mathsf{zero}} \nullvec{A} \)
+        \begin{equation*}
+          \size{\alpha . \nullvec{A}} = 1 + 2 \size{\nullvec{A}} = 1 > 0 = \size{\nullvec{A}}
+        \end{equation*}
+        \item \( \alpha . (\beta . t) \xrightarrow{\mathsf{prod}} (\alpha \times \beta) . t \)
+        \begin{equation*}
+          \begin{split}
+            \size{\alpha . (\beta . t)}
+            & = 1 + 2 \size{\beta . t} \\
+            & = 1 + 2 (1 + 2 \size{t}) \\
+            & = 3 + 4 \size{t} \\
+            & > 1 + 2 \size{t} \\
+            & = \size{(\alpha \times \beta) . t}
+          \end{split}
+        \end{equation*}
+        \item \( \alpha . (t + u) \xrightarrow{\alpha\mathsf{dist}} (\alpha . t + \alpha . u) \)
+        \begin{equation*}
+          \begin{split}
+            \size{\alpha . (t + u)}
+            & = 1 + 2 \size{t + u} \\
+            & = 5 + 2 \size{t} + 2 \size{u} \\
+            & = 3 + \size{\alpha . t} + \size{\alpha . u} \\
+            & = 1 + \size{\alpha . t + \alpha . u} \\
+            & > \size{\alpha . t + \alpha . u}
+          \end{split}
+        \end{equation*}
+        \item \( \alpha . t + \beta . t \xrightarrow{\mathsf{fact}} (\alpha + \beta) . t \)
+        \begin{equation*}
+          \begin{split}
+            \size{\alpha . t + \beta . t}
+            & = 2 + \size{\alpha . t} + \size{\beta . t} \\
+            & = 4 + 4 \size{t} \\
+            & > 1 + 2 \size{t} \\
+            & = \size{(\alpha + \beta) . t}
+          \end{split}
+        \end{equation*}
+        \item \( \alpha . t + t \xrightarrow{\mathsf{fact^1}} (\alpha + 1) . t \)
+        \begin{equation*}
+          \begin{split}
+            \size{\alpha . t + t}
+            & = 2 + \size{\alpha . t} + \size{t} \\
+            & = 3 + 3 \size{t} \\
+            & > 1 + 2 \size{t} \\
+            & = \size{(\alpha + 1) . t}
+          \end{split}
+        \end{equation*}
+        \item \( t + t \xrightarrow{\mathsf{fact^2}} 2 . t \)
+        \begin{equation*}
+          \size{t + t} = 2 + 2 \size{t} > 1 + 2 \size{t} = \size{2 . t}
+        \end{equation*}
+        \item \( \head{t \times r} \xrightarrow{\mathsf{head}} t \)
+        \begin{equation*}
+          \size{\head{t \times r}} = 1 + \size{t \times r} = 1 + \size{t} + \size{r} > \size{t}
+        \end{equation*}
+        \item \( \tail{t \times r} \xrightarrow{\mathsf{tail}} r \)
+        \begin{equation*}
+          \size{\tail{t \times r}} = 1 + \size{t \times r} = 1 + \size{t} + \size{r} > \size{r}
+        \end{equation*}
+      \end{itemize}
+    \item Paso inductivo:
+      \begin{itemize}
+        \item \( \infer{\app{t}{v} \reducesto_{(p)} \app{u}{v}}{t \reducesto_{(p)} u} \)
+          \[
+            \size{\app{t}{v}} = (3 \size{t} + 2)(3 \size{v} + 2) > (3 \size{u} + 2)(3 \size{v} + 2) = \size{\app{u}{v}}
+          \]
+        \item \( \infer{\app{(\abstr{\vrbl{x}{B}}{v})}{t} \reducesto_{(p)} \app{(\abstr{\vrbl{x}{B}}{v})}{u}}{t \reducesto_{(p)} u} \)
+          \begin{equation*}
+            \begin{split}
+              \size{\app{(\abstr{\vrbl{x}{B}}{v})}{t}}
+              & = (3 \size{(\abstr{\vrbl{x}{B}}{v})} + 2)(3 \size{t} + 2) \\
+              & > (3 \size{(\abstr{\vrbl{x}{B}}{v})} + 2)(3 \size{u} + 2) \\
+              & = \size{\app{(\abstr{\vrbl{x}{B}}{v})}{u}}
+            \end{split}
+          \end{equation*}
+        \item \( \infer{t + v \reducesto_{(p)} u + v}{t \reducesto_{(p)} u} \)
+          \[
+            \size{t + v} = \size{t} + \size{v} + 2 > \size{u} + \size{v} + 2 = \size{u + v}
+          \]
+        \item \( \infer{\alpha . t \reducesto_{(p)} \alpha . u}{t \reducesto_{(p)} u} \)
+          \[
+            \size{\alpha . t} = 2 \size{t} + 1 > 2 \size{u} + 1 = \size{\alpha . u}
+          \]
+        \item \( \infer{\proj{j}{t} \reducesto_{(p)} \proj{j}{u}}{t \reducesto_{(p)} u} \)
+          \[
+            \size{\proj{j}{t}} = \size{t} > \size{u} = \size{\proj{j}{u}}
+          \]
+        \item \( \infer{t \times v \reducesto_{(p)} u \times v}{t \reducesto_{(p)} u} \)
+          \[
+            \size{t \times v} = \size{t} + \size{v} > \size{u} + \size{v} = \size{u \times v}
+          \]
+        \item \( \infer{\head{t} \reducesto_{(p)} \head{u}}{t \reducesto_{(p)} u} \)
+          \[
+            \size{\head{t}} = \size{t} + 1 > \size{u} + 1 = \size{\head{u}}
+          \]
+        \item \( \infer{\tail{t} \reducesto_{(p)} \tail{u}}{t \reducesto_{(p)} u} \)
+          \[
+            \size{\tail{t}} = \size{t} + 1 > \size{u} + 1 = \size{\tail{u}}
+          \]
+        \item \( \infer{\cast{S(A)}{S(B)} t \reducesto_{(p)} \cast{S(A)}{S(B)} u}{t \reducesto_{(p)} u} \)
+          \[
+            \size{\cast{S(A)}{S(B)} t} = \size{t} > \size{u} = \size{\cast{S(A)}{S(B)} u}
+          \]
+      \end{itemize}
+  \end{itemize}
+
+  Para la segunda parte, analizamos cada una de las reglas de igualdad:
+  \begin{itemize}
+    \item \( (u + v) =_{AC} (v + u) \)
+      \[
+        \size{u + v} = \size{u} + \size{v} + 2 = \size{v} + \size{u} + 2 = \size{v + u}
+      \]
+    \item \( ((u + v) + w) =_{AC} (u + (v + w)) \)
+      \begin{equation*}
+        \begin{split}
+          \size{((u + v) + w)}
+          & = \size{u + v} + \size{w} + 2 \\
+          & = \size{u} + \size{v} + 2 + \size{w} + 2 \\
+          & = \size{u} + (\size{v} + \size{w} + 2) + 2 \\
+          & = \size{u} + \size{v + w} + 2 \\
+          & = \size{(u + (v + w))}
+        \end{split}
+      \end{equation*}
+    \item \( ((u \times v) \times w) =_{AC} (u \times (v \times w)) \)
+      \begin{equation*}
+        \begin{split}
+          \size{((u \times v) \times w)}
+          & = \size{u \times v} + \size{w} \\
+          & = \size{u} + \size{v} + \size{w} \\
+          & = \size{u} + (\size{v} + \size{w}) \\
+          & = \size{u} + \size{v \times w} \\
+          & = \size{(u \times (v \times w))}
+        \end{split}
+      \end{equation*}
+    \qedhere
+  \end{itemize}
+\end{proof}
+
+Similarmente a como hicimos para el \( \lambdacalculus \) simplemente tipado, definimos el conjunto de términos fuertemente normalizantes:
+
+\begin{definition}
+  Definimos como \( \snset \) al conjunto de términos fuertemente normalizantes. Formalmente:
+  \[ \snset = \{ t \mid \exists \lpl{t} \} \]
+\end{definition}
+
+A continuación, vamos a demostrar que cualquier combinación lineal de términos fuertemente normalizantes es a su vez un término fuertemente normalizante.
+
+\begin{lemma}\label{lem:sum_sn}
+  Si para todo \( i \in \{1, \ldots, n\} \) tenemos que \( r_i \in \snset \), entonces \( \sum\limits_{i = 1}^{n} [\alpha_i .] r_i \in \snset \).
+\end{lemma}
+
+\begin{proof}
+  Por definición, si \( \red{t} \subseteq \snset \) entonces \( t \in \snset \).
+  Por lo tanto, basta con mostrar que \( \red{\sum\limits_{i = 1}^{n} [\alpha_i .] r_i} \subseteq \snset \).
+  Procedemos por inducción estructural sobre \( (\sum\limits_{i = 1}^{n} |r_i|, \size{\sum\limits_{i = 1}^{n} [\alpha_i .] r_i}) \), considerando el orden lexicográfico, y analizamos cada uno de los reductos \( t \) de \( \sum\limits_{i = 1}^{n} [\alpha_i .] r_i \).
+  \begin{itemize}
+    \item \( t = \sum\limits_{i = 1}^n [\alpha_i .] s_i \) donde para todo \( i \neq k \), \( s_i = r_i \) y \( r_k \reducesto s_k \)
+      \\ Como \( \sum\limits_{i = 1}^n \lpl{s_i} < \sum\limits_{i = 1}^n \lpl{r_i} \), tenemos por hipótesis de inducción que \( t \in \snset \), que es lo que queríamos mostrar.
+    \item \( t = \sum\limits_{i = 1}^n s_i \) donde para todo \( i \neq k \), \( s_i = [\alpha_i .] r_i \) y \( \alpha_k r_k \reducesto s_k \)
+      \\ Casos:
+      \begin{itemize}
+        \item \( \alpha_k = 0 \) o \( r_k = \nullvec{A} \)
+        \\ En este caso, \( s_k = \nullvec{A} \)
+        y entonces \( \sum\limits_{i = 1}^{n} |s_i| \leq \sum\limits_{i = 1}^{n} |r_i| \)
+        y, por Lema~\ref{lem:size}, \( \size{t} < \size{\sum\limits_{i = 1}^{n} [\alpha_i .] r_i} \).
+        Por lo tanto, por hipótesis de inducción, tenemos que \( t \in \snset \), que es lo que queríamos mostrar.
+        \item \( \alpha_k = 1 \) y \( s_k = r_k \)
+        \\ En este caso, \( \sum\limits_{i = 1}^{n} |s_i| \leq \sum\limits_{i = 1}^{n} |r_i| \)
+        y, por Lema~\ref{lem:size}, \( \size{t} < \size{\sum\limits_{i = 1}^{n} [\alpha_i .] r_i} \),
+        por lo tanto, por hipótesis de inducción, tenemos que \( t \in \snset \), que es lo que queríamos mostrar.
+        \item \( r_k = t_1 + t_2 \) y \( s_k = \alpha . t_1 + \alpha . t_2 \)
+        \\ En este caso, \( (\sum\limits_{i \neq k} |r_i|) + |t_1| + |t_2| \leq \sum\limits_{i = 1}^n |r_i| \)
+        y, por Lema~\ref{lem:size}, \( \size{t} < \size{\sum\limits_{i = 1}^{n} [\alpha_i .] r_i} \).
+        Por lo tanto, por hipótesis de inducción, tenemos que \( t \in \snset \), que es lo que queríamos mostrar.
+        \item \( r_k = \beta . u \) y \( s_k = (\alpha \times \beta) . u \)
+        \\ En este caso, \( (\sum\limits_{i \neq k} |r_i|) + |u| \leq \sum\limits_{i = 1}^n |r_i| \)
+        y, por Lema~\ref{lem:size}, \( \size{t} < \size{\sum\limits_{i = 1}^{n} [\alpha_i .] r_i} \).
+        Por lo tanto, por hipótesis de inducción, tenemos que \( t \in \snset \), que es lo que queríamos mostrar.
+      \end{itemize}
+    \item \( t = \sum\limits_{\substack{i\neq j\\ i\neq k}} [\alpha_i .] r_i + ([\alpha_j .] + [\alpha_k .]) r_j \) con \( r_j = r_k \)
+      \\ En este caso, \( (\sum\limits_{i \neq j} |r_i|) + |r_j| \leq \sum\limits_i |r_i| \)
+      y, por Lema~\ref{lem:size}, \( \size{t} < \size{\sum\limits_{i = 1}^{n} [\alpha_i .] r_i} \).
+      Por lo tanto, por hipótesis de inducción, tenemos que \( t \in \snset \), que es lo que queríamos mostrar.
+  \end{itemize}
+  Con esto mostramos que \( \red{\sum\limits_{i = 1}^{n} [\alpha_i .] r_i} \subseteq \snset \). Por lo tanto, \( \sum\limits_{i = 1}^{n} [\alpha_i .] r_i \) está en \( \snset \).
+\end{proof}
+
+Si un término es fuertemente normalizante, la intuición nos diría que cualquier proyección sobre él debería ser a su vez un término fuertemente normalizante. Sin embargo, dada la complejidad de la regla de proyección, esto no es trivial. Vamos a probar que efectivamente es así.
+
+\begin{lemma}\label{lem:t_implies_proj_t}
+  Si \( t \in \snset \), entonces \( \proj{j}{t} \in \snset \).
+\end{lemma}
+
+\begin{proof}
+  Basta con mostrar que \( \red{\proj{j}{t}} \subseteq \snset \). Procedemos por inducción sobre \( \lpl{t} \). Analizamos cada uno de los reductos de \( \proj{j}{t} \):
+  \begin{itemize}
+    \item \( \proj{j}{t'} \) donde \( t \reducesto t' \)
+      \\ Como \( \lpl{t'} < \lpl{t} \) y \( t' \in \snset \), tenemos por hipótesis de inducción que \( \proj{j}{t'} \in \snset \), que es lo que queríamos mostrar.
+    \item \( s = \prod\limits_{h = 1}^j b_{hk} \times \sum\limits_{i \in P} (\frac{\alpha_i}{\sqrt{\sum_{i \in P} |\alpha_i|^2}}) (b_{j + 1, i} \times \cdots \times b_{mi}) \)
+      \\ Cualquier secuencia de reducción que comience en \( s \) solo usará reglas de los axiomas de espacios vectoriales, las cuales, por Lema~\ref{lem:size}, reducen el tamaño del término, con excepción de la regla \textsf{null}, que de cualquier forma solo se puede aplicar un número finito de veces. Por lo tanto, \( s \in \snset \), que es lo que queríamos mostrar.
+      \qedhere
+  \end{itemize}
+\end{proof}
+
+A continuación, vamos a definir sobre \( \lambdas \) el concepto de \textit{reducibilidad} que introdujimos en el capítulo 3 cuando probamos normalización fuerte sobre el \( \lambdacalculus \) simplemente tipado: vamos a definir un conjunto por cada tipo \( A \), llamado \textit{interpretación de A}, y vamos a probar que todo término está en la interpretación de su tipo. Se utilizará la notación \( t : A \) para representar \( FV(t) \vdash t : A \), donde \( FV(t) \) representa el conjunto de variables libres de \( t \) (notar que las variables son tipadas).
+
+\begin{definition}
+  Dado un tipo \( A \), definimos \( \interp{A} \) (leído como \textit{interpretación de A}) inductivamente de la siguiente forma:
+  \begin{equation*}
+    \begin{split}
+      \interp{\qubittype} & = \{ t : S(\qubittype) \mid t \in \snset \} \\
+      \interp{A \times B} & = \{ t : S(S(A) \times S(B)) \mid t \in \snset \} \\
+      \interp{\Psi \Rightarrow A} & = \{ t : S(\Psi \Rightarrow A) \mid \forall r \in \interp{\Psi}, t r \in \interp{A} \} \\
+      \interp{S(A)} & = \{ t : S(A) \mid t \in \snset \}
+    \end{split}
+  \end{equation*}
+  Si \( t \in \interp{A} \), decimos que \( t \) es \textit{reducible}.
+\end{definition}
+
+\begin{definition}
+  Llamamos \( \neutralset \) al conjunto de \textit{términos neutrales},
+  definidos de la siguiente forma:
+  \begin{itemize}
+    \item \( \app{t}{r} \in \neutralset \)
+    \item \( \head{t} \in \neutralset \)
+    \item \( \tail{t} \in \neutralset \)
+    \item No hay más elementos en \( \neutralset \).
+  \end{itemize}
+\end{definition}
+
+Similarmente a como hicimos en el capítulo 3, vamos a probar las propiedades esenciales de la reducibilidad.
+
+\begin{lemma}\label{lem:cr}
+  Para todo tipo \( A \) se cumplen las siguientes propiedades:
+  \begin{description}
+    \item[(CR1)] Si \( t \in \interp{A} \), entonces \( t \in \snset \).
+    \item[(CR2)] Si \( t \in \interp{A} \), entonces \( \red{t} \subseteq \interp{A} \).
+    \item[(CR3)] Si \( t \in \neutralset \) y \( \red{t} \subseteq \interp{A} \) entonces \( t \in \interp{A} \).
+    \item[(HAB)] Para todo \( x^A \), \( x \in \interp{A} \).
+    \item[(LIN1)] Si \( t \in \interp{A} \) y \( r \in \interp{A} \), entonces \( t + r \in \interp{A} \).
+    \item[(LIN2)] Si \( t \in \interp{A} \) entonces \( \alpha . t \in \interp{A} \).
+    \item[(NULL)] \( \nullvec{A} \in \interp{A} \)
+  \end{description}
+\end{lemma}
+
+\begin{proof}
+  Procedemos por inducción estructural sobre \( A \):
+  \subsection*{\( A = \qubittype \)}
+  \begin{itemize}
+    \item CR1
+      \\ Dado \( t \in \interp{\qubittype} \), queremos mostrar que \( t \in \snset \). Por definición, \( \interp{\qubittype} \subseteq \snset \), por lo que \( t \in \snset \), que es lo que queríamos mostrar.
+    \item CR2
+      \\ Dado \( t \in \interp{\qubittype} \), queremos mostrar que \( \red{t} \subseteq \interp{\qubittype} \). Por definición, \( \interp{\qubittype} \subseteq \snset \), por lo que \( t \in \snset \) y entonces \( \red{t} \subseteq \snset \). Por otra parte, como \( t \in \interp{\qubittype} \), tenemos que \( t : S(\qubittype) \), y por Teorema~\ref{thm:subject-reduction}, tenemos que si \( r \in \red{t} \), entonces \( r : S(\qubittype) \). Por lo tanto, por definición, tenemos que \( \red{t} \subseteq \interp{\qubittype} \), que es lo que queríamos mostrar.
+    \item CR3
+      \\ Dado \( t \in \neutralset \) donde \( \red{t} \subseteq \interp{\qubittype} \), queremos mostrar que \( t \in \interp{\qubittype} \). Por definición de \( \interp{\qubittype} \), esto equivale a mostrar que \( t : S(\qubittype) \) y \( t \in \snset \).
+      \\ Como \( \red{t} \subseteq \interp{\qubittype} \subseteq \snset \), tenemos que \( t \in \snset \). Por otra parte, por definición de \( \interp{\qubittype} \), si \( t' \in \red{t} \subseteq \interp{\qubittype} \), entonces \( t' : S(\qubittype) \). Por lo tanto, por Conjetura~\ref{cnj:subject-expansion}, \( t : S(\qubittype) \). Esto es lo que queríamos mostrar.
+    \item HAB
+      \\ Como \( \vrbl{x}{\qubittype} \in \snset \) y \( \vrbl{x}{\qubittype} : \qubittype \preceq S(\qubittype) \), tenemos por definición de \( \interp{\qubittype} \) que \( \vrbl{x}{\qubittype} \in \interp{\qubittype} \), que es lo que queríamos mostrar.
+    \item LIN1
+      \\ Por definición de \( \interp{\qubittype} \), basta con mostrar que \( t + r : S(\qubittype) \) y \( t + r \in \snset \). Como \( t \in \interp{\qubittype} \) y \( r \in \interp{\qubittype} \), tenemos por definición de \( \interp{\qubittype} \) que \( t : S(\qubittype) \), \( r : S(\qubittype) \), \( t \in \snset \) y \( r \in \snset \). Por lo tanto, \( t + r : S(S(\qubittype)) \preceq S(\qubittype) \) y, por Lema~\ref{lem:sum_sn}, \( t + r \in \snset \), que es lo que queríamos mostrar.
+    \item LIN2
+      \\ Por definición de \( \interp{\qubittype} \), basta con mostrar que \( \alpha . t : S(\qubittype) \) y \( \alpha . t \in \snset \). Como \( t \in \interp{\qubittype} \), tenemos por definición de \( \interp{\qubittype} \) que \( t : S(\qubittype) \) y \( t \in \snset \). Por lo tanto, \( \alpha . t : S(S(\qubittype)) \preceq S(\qubittype) \) y, por Lema~\ref{lem:sum_sn}, \( \alpha . t \in \snset \), que es lo que queríamos mostrar.
+    \item NULL
+      \\ Como \( \nullvec{\qubittype} : S(\qubittype) \) y \( \nullvec{\qubittype} \in \snset \), tenemos por definición de \( \interp{\qubittype} \) que \( \nullvec{\qubittype} \in \interp{\qubittype} \).
+  \end{itemize}
+  \subsection*{\( A = B \times C \)}
+    \begin{itemize}
+      \item CR1
+        \\ Como \( t \in \interp{B \times C} \), tenemos por definición que \( t \in \snset \), que es lo que queríamos mostrar.
+      \item CR2
+        \\ Dado \( t \in \interp{B \times C} \), queremos mostrar que \( \red{t} \subseteq \interp{B \times C} \). Es decir, si \( t' \in \red{t} \), entonces \( t' \in \interp{B \times C} \).
+        \\ Como \( t \in \interp{B \times C} \), tenemos que \( t : S(S(B) \times S(C)) \). Y por Teorema~\ref{thm:subject-reduction}, tenemos que \( t' : S(S(B) \times S(C)) \). Por otra parte, como \( t \in \interp{B \times C} \), tenemos que \( t \in \snset \). Entonces, \( t' \in \snset \).
+        \\ Por lo tanto, por definición, \( t' \in \interp{B \times C} \), que es lo que queríamos mostrar.
+      \item CR3
+        \\ Dado \( t \in \neutralset \) donde \( \red{t} \subseteq \interp{B \times C} \), queremos mostrar que \( t \in \interp{B \times C} \).
+        \\ Como \( \red{t} \subseteq \interp{B \times C} \), tenemos que todos los reductos de \( t \) tienen tipo \( S(S(B) \times S(C)) \). Entonces, por Conjetura~\ref{cnj:subject-expansion} que \( t : S(S(B) \times S(C)) \).
+        \\ Por otra parte, como \( \red{t} \subseteq \interp{B \times C} \), tenemos que \( \red{t} \subseteq \snset \). Entonces, \( t \in \snset \).
+        \\ Por lo tanto, por definición, \( t \in \interp{B \times C} \), que es lo que queríamos mostrar.
+      \item HAB
+        \\ Como \( \vrbl{x}{B \times C} : B \times C \preceq S(S(B) \times S(C)) \) y \( \vrbl{x}{B \times C} \in \snset \), tenemos que \( \vrbl{x}{B \times C} \in \interp{B \times C} \), que es lo que queríamos mostrar.
+      \item LIN1
+        \\ Como \( t \in \interp{B \times C} \), tenemos que \( t : S(S(B) \times S(C)) \) y \( t \in \snset \). Análogamente, tenemos que \( r : S(S(B) \times S(C)) \) y \( r \in \snset \). Entonces, \( t + r : S(S(B) \times S(C)) \) y, por Lema~\ref{lem:sum_sn}, \( t + r \in \snset \).
+        \\ Por lo tanto, por definición de \( \interp{B \times C} \), tenemos que \( t + r \in \interp{B \times C} \), que es lo que queríamos mostrar.
+      \item LIN2
+        \\ Como \( t \in \interp{B \times C} \), tenemos que \( t : S(S(B) \times S(C)) \) y \( t \in \snset \). Entonces, \( \alpha . t : S(S(S(B) \times S(C))) \preceq S(S(B) \times S(C)) \) y, por Lema~\ref{lem:sum_sn}, \( \alpha . t \in \snset \).
+        \\ Por lo tanto, por definición de \( \interp{B \times C} \), tenemos que \( \alpha . t \in \interp{B \times C} \), que es lo que queríamos mostrar.
+      \item NULL
+        \\ Como \( \nullvec{B \times C} : S(B \times C) \preceq S(S(B) \times S(C)) \) y \( \nullvec{B \times C} \in \snset \), tenemos por definición de \( \interp{B \times C} \) que \( \nullvec{B \times C} \in \interp{B \times C} \), que es lo que queríamos mostrar.
+    \end{itemize}
+  \subsection*{\( A = \Psi \Rightarrow B \)}
+    \begin{itemize}
+      \item CR1
+        \\ Dado \( t \in \interp{\Psi \Rightarrow B} \), queremos mostrar que \( t \in \snset \). Sea \( r \in \interp{\Psi} \) (notar que por hipótesis de inducción (HAB), tal \( r \) existe). Por definición, tenemos que \( \app{t}{r} \in \interp{B} \).
+        Y por hipótesis de inducción, tenemos que \( \app{t}{r} \in \snset \), es decir, \( \lpl{\app{t}{r}} \) es finito.
+        Y como \( \lpl{t} \leq \lpl{\app{t}{r}} \), tenemos que \( \lpl{t} \) es finito, y por lo tanto, \( t \in \snset \), que es lo que queríamos mostrar.
+      \item CR2
+        \\ Dado \( t \in \interp{\Psi \Rightarrow B} \), queremos mostrar que \( \red{t} \subseteq \interp{\Psi \Rightarrow B} \), es decir, que dado \( t' \in \red{t} \), \( t' \in \interp{\Psi \Rightarrow B} \). Por definición de \( \interp{\Psi \Rightarrow B} \), esto equivale a mostrar que \( t' : S(\Psi \Rightarrow B) \) y, para todo \( r \in \interp{\Psi} \), \( \app{t'}{r} \in \interp{B} \).
+        \\ Como \( t \in \interp{\Psi \Rightarrow B} \), tenemos por definición que, para todo \( r \in \interp{\Psi} \), \( \app{t}{r} \in \interp{B} \). Y por hipótesis de inducción, esto implica que, para todo \( r \in \interp{\Psi} \), \( \red{\app{t}{r}} \subseteq \interp{B} \). En particular, dado \( t' \in \red{t} \), tenemos que, para todo \( r \in \interp{\Psi} \), \( \app{t'}{r} \in \red{\app{t}{r}} \subseteq \interp{B} \). Y como \( t \in \interp{\Psi \Rightarrow B} \), tenemos por definición que \( t : S(\Psi \Rightarrow B) \). Luego, por Teorema~\ref{thm:subject-reduction}, tenemos que \( t' : S(\Psi \Rightarrow B) \). Esto es lo que queríamos mostrar.
+      \item CR3
+        \\ Dado \( t \in \neutralset \) donde \( \red{t} \subseteq \interp{\Psi \Rightarrow B} \), queremos mostrar que \( t \in \interp{\Psi \Rightarrow B} \). Por definición, esto equivale a mostrar que \( t : S(\Psi \Rightarrow B) \) y, para todo \( r \in \interp{\Psi} \), \( \app{t}{r} \in \interp{B} \). Por hipótesis de inducción, basta con mostrar que \( t : S(\Psi \Rightarrow B) \) y, para todo \( r \in \interp{\Psi} \), \( \red{\app{t}{r}} \in \interp{B} \).
+        Sea \( r \in \interp{\Psi} \). Por hipótesis de inducción (CR1), tenemos que \( r \in \snset \), es decir, \( \lpl{r} \) existe. Por lo tanto, podemos proceder por inducción (2) sobre \( (\lpl{r}, \size{r}) \).
+        Analizamos los posibles reductos de \( \app{t}{r} \):
+        \begin{itemize}
+          \item \( \app{t}{r} \reducesto \app{t'}{r} \) donde \( t \reducesto t' \)
+            \\ Como \( t' \in \red{t} \), tenemos que \( t' \in \interp{\Psi \Rightarrow B} \). Y como \( r \in \interp{\Psi} \), tenemos por definición que \( \app{t'}{r} \in \interp{B} \), que es lo que queríamos mostrar.
+          \item \( \app{t}{r} = \app{(\ifte{}{u}{v})}{r} \reducesto \app{(\ifte{}{u}{v})}{r'} \) donde \( r \reducesto r' \)
+            \\ Como \( r \in \interp{\Psi} \), tenemos por hipótesis de inducción (CR2) que \( r' \in \interp{\Psi} \). Y como \( \lpl{r'} < \lpl{r} \), tenemos por hipótesis de inducción 2 que \( \app{(\ifte{}{u}{v})}{r'} \in \interp{B} \), que es lo que queríamos mostrar.
+          \item \( \app{t}{r} = \app{t}{(r_1 + r_2)} \reducesto \app{t}{r_1} + \app{t}{r_2} \)
+            \\ Como \( \lpl{r_1} \leq \lpl{r} \) y, por Lema~\ref{lem:size}, \( \size{r_1} < \size{r} \), tenemos por hipótesis de inducción (2) que \( \app{t}{r_1} \in \interp{B} \). Análogamente, tenemos que \( \app{t}{r_2} \in \interp{B} \). Por lo tanto, por Lema~\ref{lem:cr} (LIN1), tenemos que \( \app{t}{r_1} + \app{t}{r_2} \in \interp{B} \), que es lo que queríamos mostrar.
+          \item \( \app{t}{r} = \app{t}{(\alpha . r_1)} \reducesto \alpha . \app{t}{r_1} \)
+            \\ Como \( \lpl{r_1} \leq \lpl{r} \) y, por Lema~\ref{lem:size}, \( \size{r_1} < \size{r} \), tenemos por hipótesis de inducción (2) que \( \app{t}{r_1} \in \interp{B} \). Por lo tanto, por Lema~\ref{lem:cr} (LIN2), tenemos que \( \alpha . \app{t}{r_1} \in \interp{B} \), que es lo que queríamos mostrar.
+          \item \( \app{t}{r} = \app{t}{\nullvec{\Psi}} \reducesto \nullvec{B} \)
+            \\ Por Lema~\ref{lem:cr} (NULL), tenemos que \( \nullvec{B} \in \interp{B} \), que es lo que queríamos mostrar.
+        \end{itemize}
+        Por otra parte, como \( \red{t} \subseteq \interp{\Psi \Rightarrow B} \), tenemos que todos los reductos de \( t \) tienen tipo \( S(\Psi \Rightarrow B) \). Luego, por Conjetura~\ref{cnj:subject-expansion}, tenemos que \( t : S(\Psi \Rightarrow B) \), que es lo que queríamos mostrar.
+      \item HAB
+        \\ Por definición de \( \interp{\Psi \Rightarrow B} \), y como \( \vrbl{x}{\Psi \Rightarrow B} : S(\Psi \Rightarrow B) \), basta con mostrar que, para todo \( t \in \interp{\Psi} \), tenemos que \( \app{\vrbl{x}{\Psi \Rightarrow B}}{t} \in \interp{B} \).
+        \\ Sea \( t \in \interp{\Psi} \). Como \( \app{\vrbl{x}{\Psi \Rightarrow B}}{t} \in \neutralset \), basta con mostrar que \( \red{\app{\vrbl{x}{\Psi \Rightarrow B}}{t}} \subseteq \interp{B} \). Como \( t \in \interp{\Psi} \), tenemos por Lema~\ref{lem:cr} (CR1) que \( t \in \snset \). Por lo tanto, podemos proceder por inducción (2) sobre \( (\lpl{t}, \size{t}) \). Analizamos los posibles reductos de \( \app{\vrbl{x}{\Psi \Rightarrow B}}{t} \):
+        \begin{itemize}
+          \item \( \app{\vrbl{x}{\Psi \Rightarrow B}}{t} = \app{\vrbl{x}{\Psi \Rightarrow B}}{(t_1 + t_2)} \reducesto \app{\vrbl{x}{\Psi \Rightarrow B}}{t_1} + \app{\vrbl{x}{\Psi \Rightarrow B}}{t_2} \)
+            \\ Como \( \lpl{t_1} \leq \lpl{t} \) y, por Lema~\ref{lem:size}, \( \size{t_1} < \size{t} \), tenemos por hipótesis de inducción (2) que \( \app{\vrbl{x}{\Psi \Rightarrow B}}{t_1} \in \interp{B} \). Análogamente, tenemos que \( \app{\vrbl{x}{\Psi \Rightarrow B}}{t_2} \in \interp{B} \). Por lo tanto, por Lema~\ref{lem:cr} (LIN1), tenemos que \( \app{\vrbl{x}{\Psi \Rightarrow B}}{t_1} + \app{\vrbl{x}{\Psi \Rightarrow B}}{t_2} \in \interp{B} \), que es lo que queríamos mostrar.
+          \item \( \app{\vrbl{x}{\Psi \Rightarrow B}}{t} = \app{\vrbl{x}{\Psi \Rightarrow B}}{(\alpha . t_1)} \reducesto \alpha . \app{\vrbl{x}{\Psi \Rightarrow B}}{t_1} \)
+            \\ Como \( \lpl{t_1} \leq \lpl{t} \) y, por Lema~\ref{lem:size}, \( \size{t_1} < \size{t} \), tenemos por hipótesis de inducción (2) que \( \app{\vrbl{x}{\Psi \Rightarrow B}}{t_1} \in \interp{B} \). Por lo tanto, por Lema~\ref{lem:cr} (LIN2), tenemos que \( \alpha . \app{\vrbl{x}{\Psi \Rightarrow B}}{t_1} \in \interp{B} \), que es lo que queríamos mostrar.
+          \item \( \app{\vrbl{x}{\Psi \Rightarrow B}}{t} = \app{\vrbl{x}{\Psi \Rightarrow B}}{(\nullvec{\Psi})} \reducesto \nullvec{B} \)
+            \\ Por Lema~\ref{lem:cr} (NULL), tenemos que \( \nullvec{B} \in \interp{B} \), que es lo que queríamos mostrar.
+        \end{itemize}
+      \item LIN1
+        \\ Por definición de \( \interp{\Psi \Rightarrow B} \), basta con mostrar que \( t + r : S(\Psi \Rightarrow B) \) y, para todo \( s \in \interp{\Psi} \), \( \app{(t + r)}{s} \in \interp{B} \).
+        \\ Como \( t \in \interp{\Psi \Rightarrow B} \) y \( r \in \interp{\Psi \Rightarrow B} \), tenemos que \( t : S(\Psi \Rightarrow B) \), \( r : S(\Psi \Rightarrow B) \) y, para todo \( s \in \interp{\Psi} \), \( \app{t}{s} \in \interp{B} \) y \( \app{r}{s} \in \interp{B} \). Por lo tanto, \( t + r : S(S(\Psi \Rightarrow B)) \preceq S(\Psi \Rightarrow B) \).
+        \\ Nos queda mostrar que, para todo \( s \in \interp{\Psi} \), \( \app{(t + r)}{s} \in \interp{B} \). Como \( \app{(t + r)}{s} \in \neutralset \), tenemos por hipótesis de inducción (CR3) que basta con mostrar que, para todo \( s \in \interp{\Psi} \), \( \red{\app{(t + r)}{s}} \subseteq \interp{B} \). Como \( \app{t}{s} \in \interp{B} \), \( \app{r}{s} \in \interp{B} \), y \( s \in \interp{\Psi} \), tenemos por hipótesis de inducción (CR1) que \( t \in \snset \), \( r \in \snset \) y \( s \in \snset \). Por lo tanto, podemos proceder por inducción (2) sobre \( (\lpl{t} + \lpl{r} + \lpl{s}, \size{\app{(t + r)}{s}}) \). Analizamos los posibles reductos de \( \app{(t + r)}{s} \):
+        \begin{itemize}
+          \item \( \app{(t + r)}{s} \reducesto \app{(t' + r)}{s} \) donde \( t \reducesto t' \)
+          \\ Como \( \lpl{t'} < \lpl{t} \), tenemos por hipótesis de inducción que \( \app{(t' + r)}{s} \in \interp{B} \), que es lo que queríamos mostrar.
+          \item \( \app{(t + r)}{s} \reducesto \app{(t + r')}{s} \) donde \( r \reducesto r' \)
+          \\ Análogo al caso anterior.
+          \item \( \app{(t + r)}{(s_1 + s_2)} \reducesto \app{(t + r)}{s_1} + \app{(t + r)}{s_2} \)
+          \\ Como \( \lpl{s_1} \leq \lpl{s} \) y \( \size{\app{(t + r)}{s_1}} < \size{\app{(t + r)}{s}} \), tenemos por hipótesis de inducción (2) que \( \app{(t + r)}{s_1} \in \interp{B} \). Análogamente, tenemos que \( \app{(t + r)}{s_2} \in \interp{B} \). Por lo tanto, por hipótesis de inducción, tenemos que \( \app{(t + r)}{s_1} + \app{(t + r)}{s_2} \in \interp{B} \), que es lo que queríamos mostrar.
+          \item \( \app{(t + r)}{(\alpha . s_1)} \reducesto \alpha . \app{(t + r)}{s_1} \)
+          \\ Como \( \lpl{s_1} \leq \lpl{s} \) y \( \size{\app{(t + r)}{s_1}} < \size{\app{(t + r)}{s}} \), tenemos por hipótesis de inducción (2) que \( \app{(t + r)}{s_1} \in \interp{B} \). Por lo tanto, por hipótesis de inducción (LIN2), tenemos que \( \alpha . \app{(t + r)}{s_1} \in \interp{B} \), que es lo que queríamos mostrar.
+          \item \( \app{(t + r)}{\nullvec{\Psi}} \reducesto \nullvec{B} \)
+          \\ Por hipótesis de inducción (NULL), \( \nullvec{B} \in \interp{B} \), que es lo que queríamos mostrar.
+          \item \( \app{(t + r)}{s} \reducesto \app{t}{s} + \app{r}{s} \)
+          \\ Como \( \app{t}{s} \in \interp{B} \) y \( \app{r}{s} \in \interp{B} \), tenemos por hipótesis de inducción que \( \app{t}{s} + \app{r}{s} \in \interp{B} \), que es lo que queríamos mostrar.
+        \end{itemize}
+      \item LIN2
+        \\ Por definición de \( \interp{\Psi \Rightarrow B} \), basta con mostrar que \( \alpha . t : S(\Psi \Rightarrow B) \) y, para todo \( s \in \interp{\Psi} \), \( \app{(\alpha . t)}{s} \in \interp{B} \).
+        \\ Como \( t \in \interp{\Psi \Rightarrow B} \), tenemos que \( t : S(\Psi \Rightarrow B) \) y, para todo \( s \in \interp{\Psi} \), \( \app{t}{s} \in \interp{B} \). Por lo tanto, \( \alpha . t : S(S(\Psi \Rightarrow B)) \preceq S(\Psi \Rightarrow B) \).
+        \\ Nos queda mostrar que, para todo \( s \in \interp{\Psi} \), \( \app{(\alpha . t)}{s} \in \interp{B} \). Como \( \app{(\alpha . t)}{s} \in \neutralset \), tenemos por hipótesis de inducción (CR3) que basta con mostrar que, para todo \( s \in \interp{\Psi} \), \( \red{\app{(\alpha . t)}{s}} \subseteq \interp{B} \).  Como \( \app{t}{s} \in \interp{B} \) y \( s \in \interp{\Psi} \), tenemos por hipótesis de inducción (CR1) que \( t \in \snset \) y \( s \in \snset \). Por lo tanto, podemos proceder por inducción (2) sobre \( (\lpl{t} + \lpl{s}, \size{\app{(\alpha . t)}{s}}) \). Analizamos los posibles reductos de \( \app{(\alpha . t)}{s} \):
+        \begin{itemize}
+          \item \( \app{(\alpha . t)}{s} \reducesto \app{(\alpha . t')}{s} \) donde \( t \reducesto t' \)
+          \\ Como \( \lpl{t'} < \lpl{t} \), tenemos por hipótesis de inducción (2) que \( \app{(\alpha . t')}{s} \in \interp{B} \), que es lo que queríamos mostrar.
+          \item \( \app{(\alpha . t)}{s} = \app{(\alpha . t)}{(s_1 + s_2)} \reducesto \app{(\alpha . t)}{s_1} + \app{(\alpha . t)}{s_2} \)
+          \\ Como \( \lpl{t} + \lpl{s_1} \leq \lpl{t} + \lpl{s} \) y \( \size{\app{(\alpha . t)}{s_1}} < \size{\app{(\alpha . t)}{s}} \), tenemos por hipótesis de inducción que \( \app{(\alpha . t)}{s_1} \in \interp{B} \). Análogamente, \( \app{(\alpha . t)}{s_2} \in \interp{B} \). Por lo tanto, por hipótesis de inducción (LIN1), \( \app{(\alpha . t)}{s_1} + \app{(\alpha . t)}{s_2} \in \interp{B} \), que es lo que queríamos mostrar.
+          \item \( \app{(\alpha . t)}{s} = \app{(\alpha . t)}{(\beta . s_1)} \reducesto \beta . \app{(\alpha. t)}{s_1} \)
+          \\ Como \( \lpl{t} + \lpl{s_1} \leq \lpl{t} + \lpl{s} \) y \( \size{\app{(\alpha . t)}{s_1}} < \size{\app{(\alpha . t)}{s}} \), tenemos por hipótesis de inducción (2) que \( \app{(\alpha . t)}{s_1} \in \interp{B} \). Por lo tanto, por hipótesis de inducción, \( \beta . \app{(\alpha . t)}{s_1} \in \interp{B} \), que es lo que queríamos mostrar.
+          \item \( \app{(\alpha . t)}{s} = \app{(\alpha . t)}{\nullvec{\Psi}} \reducesto \nullvec{B} \)
+          \\ Por hipótesis de inducción (NULL), \( \nullvec{B} \in \interp{B} \), que es lo que queríamos mostrar.
+          \item \( \app{(\alpha . t)}{s} \reducesto \alpha . \app{t}{s} \)
+          \\ Como \( \app{t}{s} \in \interp{B} \), tenemos por hipótesis de inducción que \( \alpha . \app{t}{s} \in \interp{B} \), que es lo que queríamos mostrar.
+        \end{itemize}
+      \item NULL
+        \\ Queremos mostrar que \( \nullvec{\Psi \Rightarrow B} \in \interp{\Psi \Rightarrow B} \). Por definición de \( \interp{\Psi \Rightarrow B} \), esto equivale a mostrar que, para todo \( t \in \interp{\Psi} \), \( \app{\nullvec{\Psi \Rightarrow B}}{t} \in \interp{B} \). Como \( \app{\nullvec{\Psi \Rightarrow B}}{t} \in \neutralset \), tenemos por hipótesis de inducción (CR3) que eso equivale a mostrar que \( \red{\app{\nullvec{\Psi \Rightarrow B}}{t}} \subseteq \interp{B} \). Como el único reducto posible de \( \app{\nullvec{\Psi \Rightarrow B}}{t} \) es \( \nullvec{B} \), basta con mostrar que \( \nullvec{B} \in \interp{B} \), lo cual es cierto por hipótesis de inducción.
+    \end{itemize}
+  \subsection*{\( A = S(B) \)}
+  \begin{itemize}
+    \item CR1
+      \\ Como \( t \in \interp{S(B)} \), tenemos por definición que \( t \in \snset \), que es lo que queríamos mostrar.
+    \item CR2
+      \\ Dado \( t \in \interp{S(B)} \), queremos mostrar que \( \red{t} \subseteq \interp{S(B)} \).
+      \\ Por definición, \( t \in \snset \), y entonces, \( \red{t} \subseteq \snset \). También por definición, \( t : S(B) \), y por Lema~\ref{thm:subject-reduction}, todo reducto de \( t \) tiene tipo \( S(B) \). Por lo tanto, \( \red{t} \subseteq \interp{S(B)} \), que es lo que queríamos mostrar.
+    \item CR3
+      \\ Dado \( t \in \neutralset \) donde \( \red{t} \subseteq \interp{S(B)} \), queremos mostrar que \( t \in \interp{S(B)} \).
+      \\ Como \( \red{t} \in \interp{S(B)} \), todo reducto de \( t \) tiene tipo \( S(B) \). Luego, por Conjetura~\ref{cnj:subject-expansion}, \( t : S(B) \). Por otra parte, también por definición, \( \red{t} \subseteq \snset \), y entonces, \( t \in \snset \). Por lo tanto, por definición, \( t \in \interp{S(B)} \), que es lo que queríamos mostrar.
+    \item HAB
+      \\ Como \( \vrbl{x}{S(B)} : S(B) \) y \( \vrbl{x}{S(B)} \in \snset \), tenemos por definición que \( \vrbl{x}{S(B)} \in \interp{S(B)} \), que es lo que queríamos mostrar.
+    \item LIN1
+      \\ Como \( t \in \interp{S(B)} \) y \( r \in \interp{S(B)} \), tenemos por definición de \( \interp{S(B)} \) que \( t : S(B) \), \( r : S(B) \), \( t \in \snset \) y \( r \in \snset \). Por lo tanto, \( t + r : S(S(B)) \preceq S(B) \) y, por Lema~\ref{lem:sum_sn}, \( t + r \in \snset \). Por lo tanto, por definición, \( t + r \in \interp{S(B)} \), que es lo que queríamos mostrar.
+    \item LIN2
+      \\ Como \( t \in \interp{S(B)} \), tenemos por definición de \( \interp{S(B)} \) que \( t : S(B) \) y \( t \in \snset \). Entonces, \( \alpha . t : S(S(B)) \preceq S(B) \) y \( \alpha . t \in \snset \). Por lo tanto, por definición, \( \alpha . t \in \interp{S(B)} \), que es lo que queríamos mostrar.
+    \item NULL
+      \\ Queremos mostrar que \( \nullvec{S(B)} \in \interp{S(B)} \). Como \( \nullvec{S(B)} : S(S(B)) \preceq S(B) \) y \( \nullvec{S(B)} \in \snset \), tenemos por definición que \( \nullvec{S(B)} \in \interp{S(B)} \), que es lo que queríamos mostrar.
+      \qedhere
+  \end{itemize}
+\end{proof}
+
+Otra propiedad importante de la reducibilidad que vamos a introducir en el Lema~\ref{lem:a_subset_b} es que es compatible con el subtipado. En otras palabras, si \( A \) es subtipo de \( B \), entonces todos los términos de la interpretación de \( A \) están en la interpretación de \( B \).
+
+\begin{lemma}[Compatibilidad con el subtipado]\label{lem:a_subset_b}
+  Si \( A \preceq B \) entonces \( \interp{A} \subseteq \interp{B} \).
+\end{lemma}
+
+\begin{proof}
+  Procedemos por inducción estructural sobre \( \preceq \):
+  \begin{itemize}
+    \item \( \infer{A \preceq A}{} \)
+      \\ Trivial por la reflexividad de la inclusión de conjuntos.
+    \item \( \infer{A \preceq C}{A \preceq B & B \preceq C} \)
+      \\ Trivial por la transitividad de la inclusión de conjuntos.
+    \item \( \infer{A \preceq S(A)}{} \)
+      \\ Queremos mostrar que si \( t \in \interp{A} \), entonces \( t \in \interp{S(A)} \). Por definición, \( t : S(A) \preceq S(S(A)) \). Y por Lema~\ref{lem:cr} (CR1), \( t \in \snset \). Por lo tanto, por definición, \( t \in \interp{S(A)} \), que es lo que queríamos mostrar.
+    \item \( \infer{S(S(A)) \preceq S(A)}{} \)
+      \\ Como \( t \in \interp{S(S(A))} \), tenemos por definición que \( t : S(S(A)) \preceq S(A) \) y \( t \in \snset \). Por lo tanto, por definición, tenemos que \( t \in \interp{S(A)} \), que es lo que queríamos mostrar.
+    \item \( \infer{S(A) \preceq S(B)}{A \preceq B} \)
+      \\ Como \( t \in \interp{S(A)} \), tenemos por definición que \( t : S(A) \preceq S(B) \) y \( t \in \snset \). Por lo tanto, por definición, \( t \in \interp{S(B)} \), que es lo que queríamos mostrar.
+    \item \( \infer{\Psi \Rightarrow A \preceq \Psi \Rightarrow B}{A \preceq B} \)
+      \\ Nuestra hipótesis de inducción dice que \( \interp{A} \subseteq \interp{B} \). Queremos mostrar que si \( t \in \interp{\Psi \Rightarrow A} \), entonces \( t \in \interp{\Psi \Rightarrow B} \).
+      \\ Por definición, que \( t \in \interp{\Psi \Rightarrow A} \) implica que \( t : S(\Psi \Rightarrow A) \) y, para todo \( r \in \interp{\Psi}, t r \in \interp{A} \). Pero por hipótesis de inducción, esto implica que, para todo \( r \in \interp{\Psi} \), \( t r \in \interp{B} \). Y como \( A \preceq B \), tenemos que \( t : S(\Psi \Rightarrow B) \). Por lo tanto, por definición, esto implica que \( t \in \interp{\Psi \Rightarrow B} \), que es lo que queríamos mostrar.
+    \item \( \infer{A \times C \preceq B \times C}{A \preceq B} \)
+      \\ Nuestra hipótesis de inducción dice que \( \interp{A} \subseteq \interp{B} \). Queremos mostrar que si \( t \in \interp{A \times C} \), entonces \( t \in \interp{B \times C} \).
+      \\ Que \( t \in \interp{A \times C} \) implica que \( t : S(S(A) \times S(C)) \). Y como \( A \preceq B \), tenemos que \( S(A) \preceq S(B) \), y entonces, \( t : S(S(B) \times S(C)) \).
+      \\ Por otra parte, que \( t \in \interp{A \times C} \) implica que \( t \in \snset \).
+      \\ Por lo tanto, por definición, \( t \in \interp{B \times C} \), que es lo que queríamos mostrar.
+    \item \( \infer{C \times A \preceq C \times B}{A \preceq B} \)
+      \\ Análogo al caso anterior.
+      \qedhere
+  \end{itemize}
+\end{proof}
+
+Ahora vamos a probar el lema de adecuación, procediendo por inducción estructural igual que como hicimos en el capítulo 3. Previo a eso, vamos a introducir algunos lemas que nos serán de ayuda durante la prueba.
+
+\begin{definition}
+  Denotamos con \( |\Gamma| \) al multiconjunto de tipos en \( \Gamma \). Por ejemplo,
+  \[
+    |x : \qubittype, y : \qubittype, z : S(\qubittype)| = \{ \qubittype, \qubittype, S(\qubittype) \}
+  \]
+\end{definition}
+
+\begin{lemma}[Generación]
+  ~\label{lem:generation}
+  \begin{itemize}
+  \item Si \( \Gamma \vdash \ifte{}{t}{r} : A \), entonces \( \Gamma \vdash t : B \), \( \Gamma \vdash r : B \) con árboles de derivación más chicos, donde \( \Psi \Rightarrow B \preceq A \) y \( |\Gamma| \subseteq \mathfrak{B} \).
+  \item Si \( \Gamma \vdash \abstr{\vrbl{x}{\Psi}}{t} : A \), entonces \( \Gamma',x : \Psi \vdash t : B \) con árboles de derivación más chicos, donde \( \Gamma' \subseteq \Gamma \), \( \Psi \Rightarrow B \preceq A \) y \( |\Gamma\setminus\Gamma'|\subseteq \mathfrak{B} \).
+  \end{itemize}
+\end{lemma}
+
+\begin{proof}
+  Primero notemos que si \( \Gamma \vdash t : A \) es derivable, entonces \( \Delta \vdash t : B \)
+  es derivable, donde \( \Gamma \subseteq \Delta \) y
+  \( |\Delta \setminus \Gamma| \subseteq \mathfrak{B} \) (por la regla \( W \)) y \( A \preceq B \), (por la regla \( \preceq \)). Notar también que que esas son las únicas reglas de tipado que cambian el consecuente sin cambiar el término del consecuente. Por lo tanto, el lema se prueba fácilmente realizando un análisis simple regla por regla.
+\end{proof}
+
+El siguiente lema fue demostrado en~\cite{qmeas} con la hipótesis extra de que \( FV(u) = \emptyset \), y nos permite permite deducir el tipo de un término al cual se le realizó una sustitución. Es fácil notar que la prueba es válida incluso si relajamos la hipótesis \( FV(u) = \emptyset \), y por lo tanto, así lo enunciaremos aquí.
+
+\newcommand\citedsub{\cite[Lem. 4.3]{qmeas}}
+
+\begin{lemma}[Sustitución, \citedsub]\label{lem:substitution}
+  Si \( \Gamma, x : \Psi \vdash t : A \), \( \Delta  \vdash u : \Psi \), donde si \( \Psi = \qubittype^n \) entonces \( u \in \mathcal{B} \), tenemos \( \Gamma,\Delta\vdash t[u/x] : A \).
+\end{lemma}
+
+\begin{lemma}[Adecuación]\label{lem:adequacy}
+  Si \( \Gamma \vdash t:A \) y \( \theta \models \Gamma \) entonces \( \theta(t) \in \interp{A} \).
+\end{lemma}
+
+\begin{proof}
+  Procedemos por inducción estructural sobre la derivación de \( \Gamma \vdash t : A \):
+  \begin{itemize}
+    \item Regla \( \text{Ax} \)
+    \\ La regla dice:
+    \[ \infer{\vrbl{x}{\Psi} \vdash x : \Psi}{} \]
+    Si \( \theta \models \vrbl{x}{\Psi} \), entonces \( \theta(x) \in \interp{\Psi} \).
+
+    \item Regla \( \text{Ax}_{\vec{0}} \)
+    \\ La regla dice:
+    \[ \infer{\vdash \nullvec{A}: S(A)}{} \]
+    Queremos mostrar que \( \theta(\nullvec{A}) = \nullvec{A} \in \interp{S(A)} \).
+    \\ Por Lema~\ref{lem:cr} (NULL) y Lema~\ref{lem:a_subset_b}, tenemos que \( \nullvec{A} \in \interp{S(A)} \), que es lo que queríamos mostrar.
+
+    \item Regla \( \text{Ax}_{\ket{0}} \)
+    \\ La regla dice:
+    \[ \infer{\vdash \ket{0}: \qubittype}{} \]
+    Queremos mostrar que \( \theta(\ket{0}) \in \interp{\qubittype} \).
+    \\ Por definición, \( \theta(\ket{0}) = \ket{0} \in \snset \). Y como \( \ket{0} : S(\qubittype) \), tenemos por definición que \( \ket{0} \in \interp{\qubittype} \), que es lo que queríamos mostrar.
+
+    \item Regla \( \text{Ax}_{\ket{1}} \)
+    \\ La regla dice:
+    \[ \infer{\vdash \ket{1}: \qubittype}{} \]
+    Análogo al caso anterior.
+
+    \item Regla \( S^{\alpha}_{I} \)
+    \\ La regla dice:
+    \[ \infer{\Gamma \vdash \alpha . t : S(A)}{\Gamma \vdash t: A} \]
+    \[
+      \tag{HI}
+      \theta \models \Gamma \implies \theta(t) \in \interp{A}
+    \]
+    Queremos mostrar que si \( \theta \models \Gamma \), entonces \( \theta(\alpha . t) = \alpha . \theta(t) \in \interp{S(A)} \).
+    \\ Por hipótesis de inducción, tenemos que \( \theta(t) \in \interp{A} \). Y por Lema~\ref{lem:cr} (LIN2), tenemos que \( \alpha . \theta(t) \in \interp{A} \). Por lo tanto, por Lema~\ref{lem:a_subset_b}, \( \alpha . \theta(t) \in \interp{A} \subseteq \interp{S(A)} \), que es lo que queríamos mostrar.
+
+    \item Regla \( S^{+}_{I} \)
+    \\ La regla dice:
+    \[ \infer{\Gamma, \Delta \vdash (t + u): S(A)}{\Gamma \vdash t : A & \Delta \vdash u : A} \]
+    \[
+      \tag{HI}
+      (\theta_1 \models \Gamma \implies \theta_1(t) \in \interp{A})
+      \text{ y }
+      (\theta_2 \models \Delta \implies \theta_2(u) \in \interp{A})
+    \]
+    Queremos mostrar que si \( \theta \models \Gamma, \Delta \), entonces \( \theta(t + u) \in \interp{S(A)} \). Como \( \Gamma \) y \( \Delta \) son disjuntos, tenemos que \( \theta(t + u) = (\theta_1 \cup \theta_2)(t + u) = \theta_1(t) + \theta_2(u) \), donde \( \theta_1 \models \Gamma \) y \( \theta_2 \models \Delta \).
+    Por lo tanto, basta con mostrar que \( \theta_1(t) + \theta_2(u) \in \interp{S(A)} \).
+    \\ Por hipótesis de inducción y Lema~\ref{lem:a_subset_b}, tenemos que \( \theta_1(t) \in \interp{S(A)} \) y \( \theta_2(u) \in \interp{S(A)} \). Por lo tanto, por Lema~\ref{lem:cr} (LIN1) tenemos que \( \theta_1(t) + \theta_2(u) \in \interp{S(A)} \), que es lo que queríamos mostrar.
+
+    \item Regla \( S_E \)
+    \\ La regla dice:
+    \[ \infer{\Gamma \vdash \proj{j}{t} : \qubittype^j \times S(\qubittype^{n - j})}{\Gamma \vdash t : S(\qubittype^n)} \]
+    \[ \tag{HI} \theta \models \Gamma \implies \theta(t) \in \interp{S(\qubittype^n)} \]
+    Queremos mostrar que si \( \theta \models \Gamma \), entonces \( \theta(\proj{j}{t}) = \proj{j}{\theta(t)} \in \interp{\qubittype^j \times S(\qubittype^{n - j})} \). Para ello, basta con mostrar que \( \proj{j}{\theta(t)} : S(S(\qubittype^j) \times S(S(\qubittype^{n - j})) \), y \( \proj{j}{\theta(t)} \in \snset \).
+    \\ Por hipótesis de inducción, \( \theta(t) \in \interp{S(\qubittype^n)} \), lo que implica que \( \theta(t) : S(S(\qubittype^n)) \preceq S(\qubittype^n) \). Por lo tanto, \( \proj{j}{\theta(t)} : \qubittype^j \times S(\qubittype^{n - j}) \preceq S(S(\qubittype^j) \times S(S(\qubittype^{n - j}))) \).
+    \\ Por otra parte, como \( \theta(t) \in \interp{S(\qubittype^n)} \subseteq \snset \), tenemos por Lema~\ref{lem:t_implies_proj_t} que \( \proj{j}{\theta(t)} \in \snset \).
+    \\ Por lo tanto, \( \proj{j}{\theta(t)} \in \interp{\qubittype^j \times S(\qubittype^{n - j})} \), que es lo que queríamos mostrar.
+
+    \item Regla \( \preceq \)
+    \\ La regla dice:
+    \[ \infer{\Gamma \vdash t : B}{\Gamma \vdash t: A & A \preceq B} \]
+    \[
+      \tag{HI}
+      \theta \models \Gamma \implies \theta(t) \in \interp{A}
+    \]
+    Queremos mostrar que si \( \theta \models \Gamma \), entonces \( \theta(t) \in \interp{B} \).
+    \\ Por hipótesis de inducción, tenemos que \( \theta(t) \in \interp{A} \). Y por Lema~\ref{lem:a_subset_b}, tenemos que \( \interp{A} \subseteq \interp{B} \). Por lo tanto, tenemos que \( \theta(t) \in \interp{B} \), que es lo que queríamos mostrar.
+
+    \item Regla \textit{If}
+    \\ La regla dice:
+    \[ \infer{\Gamma \vdash \ifte{}{t}{r}: \qubittype \Rightarrow A}{\Gamma \vdash t : A & \Gamma \vdash r : A} \]
+    \[
+      \tag{HI}
+      \theta \models \Gamma \implies \theta(t) \in \interp{A} \land \theta(r) \in \interp{A}
+    \]
+    Queremos mostrar que si \( \theta \models \Gamma \), entonces \( \theta(\ifte{}{t}{r}) = \ifte{}{\theta(t)}{\theta(r)} \in \interp{\qubittype \Rightarrow A} \). Por definición, esto equivale a mostrar que \( \ifte{}{\theta(t)}{\theta(r)} : S(\qubittype \Rightarrow A) \) y, para todo \( s \in \interp{\qubittype}, \ifte{s}{\theta(t)}{\theta(r)} \in \interp{A} \).
+    \\ Por hipótesis de inducción, tenemos que \( \theta(t) \in \interp{A} \) y \( \theta(r) \in \interp{A} \), lo que implica que \( \theta(t) : S(A) \) y \( \theta(r) : S(A) \). Por lo tanto, \( \ifte{}{\theta(t)}{\theta(r)} : \qubittype \Rightarrow S(A) \preceq S(\qubittype \Rightarrow A) \).
+    \\ Y como \( \ifte{s}{\theta(t)}{\theta(r)} \in \neutralset \) (dado que dicho término es en verdad una aplicación), tenemos por Lema~\ref{lem:cr} (CR3) que basta con mostrar que \( \red{\ifte{s}{\theta(t)}{\theta(r)}} \subseteq \interp{A} \).
+    \\ Procedemos por inducción (2) sobre \( (\lpl{s}, \size{\ifte{s}{\theta(t)}{\theta(r)}}) \). Analizamos cada uno de los reductos de \( \ifte{s}{\theta(t)}{\theta(r)} \):
+    \begin{itemize}
+      \item \( \ifte{s}{\theta(t)}{\theta(r)} \reducesto \ifte{u}{\theta(t)}{\theta(r)} \) donde \( s \reducesto u \)
+        \\ Como \( \lpl{u} < \lpl{s} \), tenemos por hipótesis de inducción 2 que \( \ifte{u}{\theta(t)}{\theta(r)}  \in \interp{A} \), que es lo que queríamos mostrar.
+      \item \( \ifte{s}{\theta(t)}{\theta(r)} \reducesto \theta(t) \) donde \( s = \ket{1} \)
+        \\ Por hipótesis de inducción, \( \theta(t) \in \interp{A} \), que es lo que queríamos mostrar.
+      \item \( \ifte{s}{\theta(t)}{\theta(r)} \reducesto \theta(r) \) donde \( s = \ket{0} \)
+        \\ Por hipótesis de inducción, \( \theta(r) \in \interp{A} \), que es lo que queríamos mostrar.
+      \item \( \ifte{s}{\theta(t)}{\theta(r)} = \ifte{(s_1 + s_2)}{\theta(t)}{\theta(r)} \reducesto \ifte{s_1}{\theta(t)}{\theta(r)} + \ifte{s_2}{\theta(t)}{\theta(r)} \)
+        \\ Como \( \lpl{s_1} \leq \lpl{s} \) y \( \size{\ifte{s_1}{\theta(t)}{\theta(r)}} < \size{\ifte{s}{\theta(t)}{\theta(r)}} \), tenemos por hipótesis de inducción (2) que \( \ifte{s_1}{\theta(t)}{\theta(r)} \in \interp{A} \). Análogamente, tenemos que \( \ifte{s_2}{\theta(t)}{\theta(r)} \in \interp{A} \). Por lo tanto, por Lema~\ref{lem:cr} (LIN1), tenemos que \( \ifte{s_1}{\theta(t)}{\theta(r)} + \ifte{s_2}{\theta(t)}{\theta(r)} \in \interp{A} \), que es lo que queríamos mostrar.
+      \item \( \ifte{s}{\theta(t)}{\theta(r)} = \ifte{(\alpha . s_1)}{\theta(t)}{\theta(r)} \reducesto \alpha . \ifte{s_1}{\theta(t)}{\theta(r)} \)
+        \\ Como \( \lpl{s_1} \leq \lpl{s} \) y \( \size{\ifte{s_1}{\theta(t)}{\theta(r)}} < \size{\ifte{s}{\theta(t)}{\theta(r)}} \), tenemos por hipótesis de inducción (2) que \( \ifte{s_1}{\theta(t)}{\theta(r)} \in \interp{A} \). Por lo tanto, por Lema~\ref{lem:cr} (LIN2), tenemos que \( \alpha . \ifte{s_1}{\theta(t)}{\theta(r)} \in \interp{A} \), que es lo que queríamos mostrar.
+      \item \( \ifte{s}{\theta(t)}{\theta(r)} = \ifte{\nullvec{\qubittype}}{\theta(t)}{\theta(r)} \reducesto \nullvec{A} \)
+        \\ Por Lema~\ref{lem:cr} (NULL), tenemos que \( \nullvec{A} \in \interp{A} \), que es lo que queríamos mostrar.
+    \end{itemize}
+
+    \item Regla \( \Rightarrow_I \)
+    \\ La regla dice:
+    \[ \infer{\Gamma \vdash \abstr{\vrbl{x}{\Psi}}{t} : \Psi \Rightarrow A}{\Gamma, \vrbl{x}{\Psi} \vdash t : A} \]
+    \[ \tag{HI} \theta \models \Gamma, \vrbl{x}{\Psi} \implies \theta(t) \in \interp{A} \]
+    Queremos mostrar que si \( \theta' \models \Gamma \), entonces \( \theta'(\abstr{\vrbl{x}{\Psi}}{t}) = (\abstr{\vrbl{x}{\Psi}}{\theta'(t)}) \in \interp{\Psi \Rightarrow A} \), lo que equivale a mostrar que \( (\abstr{\vrbl{x}{\Psi}}{\theta'(t)}) : S(\Psi \Rightarrow A) \) y, para todo \( r \in \interp{\Psi}, \app{(\abstr{\vrbl{x}{\Psi}}{\theta'(t)})}{r} \in \interp{A} \).
+    \\ Por hipótesis de inducción, \( \theta(t) \in \interp{A} \), lo que implica que \( \theta(t) : S(A) \). Por lo tanto, \( (\abstr{\vrbl{x}{\Psi}}{\theta'(t)}) : \Psi \Rightarrow S(A) \preceq S(\Psi \Rightarrow A) \). Y como \( \app{(\abstr{\vrbl{x}{\Psi}}{\theta'(t)})}{r} \in \neutralset \), el Lema~\ref{lem:cr} (CR3) nos dice que si \( \red{\app{(\abstr{\vrbl{x}{\Psi}}{\theta'(t)})}{r}} \subseteq \interp{A} \), entonces \( \app{(\abstr{\vrbl{x}{\Psi}}{\theta'(t)})}{r} \in \interp{A} \).
+    Vamos a mostrar que efectivamente \( \red{\app{(\abstr{\vrbl{x}{\Psi}}{\theta'(t)})}{r}} \subseteq \interp{A} \).
+    \\ Como \( r \in \interp{\Psi} \), tenemos por Lema~\ref{lem:cr} (CR2) que \( r \in \snset \). Por lo tanto, podemos proceder por inducción (2) sobre \( (\lpl{r}, \size{\app{(\abstr{\vrbl{x}{\Psi}}{\theta'(t)})}{r}} \). Analizamos cada uno de los reductos de \( \app{(\abstr{\vrbl{x}{\Psi}}{\theta'(t)})}{r} \):
+    \begin{itemize}
+      \item \( \app{(\abstr{\vrbl{x}{\Psi}}{\theta'(t)})}{r} \reducesto \theta'(t)[r/x] \)
+        \\ Queremos mostrar que \( \theta'(t)[r/x] \in \interp{A} \). Por definición, \( \theta'(t)[r/x] = \theta(t) \), y por hipótesis de inducción, \( \theta(t) \in \interp{A} \). Por lo tanto, \( \theta'(t)[r/x] \in \interp{A} \), que es lo que queríamos mostrar.
+      \item \( \app{(\abstr{\vrbl{x}{\Psi}}{\theta'(t)})}{r} \reducesto \app{(\abstr{\vrbl{x}{\Psi}}{\theta'(t)})}{r'} \) donde \( r \reducesto r' \)
+        \\ Por hipótesis de inducción 2, \( \app{(\abstr{\vrbl{x}{\Psi}}{\theta'(t)})}{r'} \in \interp{A} \), que es lo que queríamos mostrar.
+      \item \( \app{(\abstr{\vrbl{x}{\Psi}}{\theta'(t)})}{r} = \app{(\abstr{\vrbl{x}{\Psi}}{\theta'(t)})}{(r_1 + r_2)} \reducesto \app{(\abstr{\vrbl{x}{\Psi}}{\theta'(t)})}{r_1} + \app{(\abstr{\vrbl{x}{\Psi}}{\theta'(t)})}{r_2} \)
+        \\ Como \( \lpl{r_1} \leq \lpl{r} \) y \( \size{\app{(\abstr{\vrbl{x}{\Psi}}{\theta'(t)})}{r_1}} < \size{\app{(\abstr{\vrbl{x}{\Psi}}{\theta'(t)})}{r}} \), tenemos por hipótesis de inducción (2) que \( \app{(\abstr{\vrbl{x}{\Psi}}{\theta'(t)})}{r_1} \in \interp{A} \). Análogamente, tenemos que \( \app{(\abstr{\vrbl{x}{\Psi}}{\theta'(t)})}{r_2} \in \interp{A} \). Por lo tanto, por Lema~\ref{lem:cr} (LIN1), tenemos que \( \app{(\abstr{\vrbl{x}{\Psi}}{\theta'(t)})}{r_1} + \app{(\abstr{\vrbl{x}{\Psi}}{\theta'(t)})}{r_2} \in \interp{A} \), que es lo que queríamos mostrar.
+      \item \( \app{(\abstr{\vrbl{x}{\Psi}}{\theta'(t)})}{r} = \app{(\abstr{\vrbl{x}{\Psi}}{\theta'(t)})}{(\alpha . r_1)} \reducesto \alpha . \app{(\abstr{\vrbl{x}{\Psi}}{\theta'(t)})}{r_1} \)
+        \\ Como \( \lpl{r_1} \leq \lpl{r} \) y \( \size{\app{(\abstr{\vrbl{x}{\Psi}}{\theta'(t)})}{r_1}} < \size{\app{(\abstr{\vrbl{x}{\Psi}}{\theta'(t)})}{r}} \), tenemos por hipótesis de inducción (2) que \( \app{(\abstr{\vrbl{x}{\Psi}}{\theta'(t)})}{r_1} \in \interp{A} \). Por lo tanto, por Lema~\ref{lem:cr} (LIN2), tenemos que \( \alpha . \app{(\abstr{\vrbl{x}{\Psi}}{\theta'(t)})}{r_1} \in \interp{A} \), que es lo que queríamos mostrar.
+      \item \( \app{(\abstr{\vrbl{x}{\Psi}}{\theta'(t)})}{r} = \app{(\abstr{\vrbl{x}{\Psi}}{\theta'(t)})}{\nullvec{\qubittype^n}} \reducesto \nullvec{A} \)
+        \\ Por Lema~\ref{lem:cr} (NULL), tenemso que \( \nullvec{A} \in \interp{A} \), que es lo que queríamos mostrar.
+    \end{itemize}
+
+    \item Regla \( \Rightarrow_E \)
+    \\ La regla dice:
+    \[ \infer{\Gamma, \Delta \vdash \app{t}{u} : A}{\Gamma \vdash t : \Psi \Rightarrow A & \Delta \vdash u : \Psi} \]
+    \[
+      \tag{HI}
+      \theta_1 \models \Gamma \land \theta_2 \models \Delta
+      \implies \theta_1(t) \in \interp{\Psi \Rightarrow A} \land \theta_2(u) \in \interp{\Psi}
+    \]
+    Queremos mostrar que si \( \theta \models \Gamma, \Delta \), entonces \( \theta(\app{t}{u}) \in \interp{A} \).
+    Como \( \Gamma \) y \( \Delta \) son disjuntos, tenemos que \( \theta(\app{t}{u}) = (\theta_1 \cup \theta_2)(\app{t}{u}) = \app{\theta_1(t)}{\theta_2(u)} \), donde \( \theta_1 \models \Gamma \) y \( \theta_2 \models \Delta \).
+    Por lo tanto, basta con mostrar que \( \app{\theta_1(t)}{\theta_2(u)} \in \interp{A} \).
+    \\ Por hipótesis de inducción y definición de \( \interp{\Psi \Rightarrow A} \), tenemos que \( \app{\theta_1(t)}{\theta_2(u)} \in \interp{A} \), que es lo que queríamos mostrar.
+
+    \item Regla \( \Rightarrow_{ES} \)
+    \\ La regla dice:
+    \[ \infer{\Gamma, \Delta \vdash t u : S(A)}{\Gamma \vdash t : S(\Psi \Rightarrow A) & \Delta \vdash u : S(\Psi)} \]
+    \[
+      \tag{HI}
+      \theta_1 \models \Gamma \land \theta_2 \models \Delta
+      \implies \theta_1(t) \in \interp{S(\Psi \Rightarrow A)}
+      \land \theta_2(u) \in \interp{S(\Psi)}
+    \]
+    Queremos mostrar que si \( \theta \models \Gamma, \Delta \), entonces \( \theta(\app{t}{u}) \in \interp{S(A)} \).
+    Como \( \Gamma \) y \( \Delta \) son disjuntos, tenemos que \( \theta(\app{t}{u}) = (\theta_1 \cup \theta_2)(\app{t}{u}) = \app{\theta_1(t)}{\theta_2(u)} \), donde \( \theta_1 \models \Gamma \) y \( \theta_2 \models \Delta \).
+    Por lo tanto, basta con mostrar que \( \app{\theta_1(t)}{\theta_2(u)} \in \interp{S(A)} \).
+    \\ Como \( \theta_1(t) \in \interp{S(\Psi \Rightarrow A)} \) y \( \theta_2(u) \in \interp{S(\Psi)} \), tenemos por definición que \( \theta_1(t) : S(\Psi \Rightarrow A) \) y \( \theta_2(u) : S(\Psi) \). Por lo tanto, \( \app{\theta_1(t)}{\theta_2(u)} : S(A) \).
+    \\ Por otra parte, vamos a mostrar que \( \app{\theta_1(t)}{\theta_2(u)} \in \snset \). Para ello, es suficiente con mostrar que \( \red{\app{\theta_1(t)}{\theta_2(u)}} \subseteq \snset \). Como \( \theta_1(t) \in \interp{S(\Psi \Rightarrow A)} \subseteq \snset \) y \( \theta_2(u) \in \interp{S(\Psi)} \subseteq \snset \), podemos proceder por inducción (2) en \( (\lpl{\theta_1(t)} + \lpl{\theta_2(u)}, \size{\app{\theta_1(t)}{\theta_2(u)}} \). Analizamos los posibles reductos de \( \app{\theta_1(t)}{\theta_2(u)} \):
+    \begin{itemize}
+      \item \( \app{\theta_1(t)}{\theta_2(u)} \reducesto \app{t'}{\theta_2(u)} \) donde \( \theta_1(t) \reducesto t' \)
+      \\ Como \( \lpl{t'} < \lpl{\theta(t)} \), tenemos por hipótesis de inducción (2) que \( \app{t'}{\theta_2(u)} \in \snset \), que es lo que queríamos mostrar.
+      \item \( \app{\theta_1(t)}{\theta_2(u)} \reducesto \app{\theta_1(t)}{u'} \) donde \( \theta_2(u) \reducesto u' \)
+      \\ Análogo al caso anterior.
+      \item \( \app{\theta_1(t)}{\theta_2(u)} = \app{(\abstr{\vrbl{x}{\qubittype^n}}{t_1})}{\theta_2(u)} \reducesto t_1[\theta_2(u)/x] \)
+      \\ Como \( \theta_1(t) = (\abstr{\vrbl{x}{\qubittype^n}}{t_1}) : S(\Psi \Rightarrow A) \), tenemos por Lema~\ref{lem:generation} que \( t_1 : A \) con un árbol de genración más chico. Entonces, por hipótesis de inducción (Adecuación), tenemos que \( t_1 \in \interp{A} \), y por lo tanto, por Lema~\ref{lem:cr} (CR1), tenemos que \( t_1 \in \snset \), que es lo que queríamos mostrar.
+      \item \( \app{\theta_1(t)}{\theta_2(u)} = \app{(\abstr{\vrbl{x}{S(\Psi)}}{t_1})}{\theta_2(u)} \reducesto t_1[\theta_2(u)/x] \)
+      \\ Análogo al caso anterior.
+      \item \( \app{\theta_1(t)}{\theta_2(u)} = \ifte{\ket{1}}{t_1}{t_2} \reducesto t_1 \)
+      \\ Como \( \theta_1(t) = (\ifte{}{t_1}{t_2}) : S(\Psi \Rightarrow A) \), tenemos por Lema~\ref{lem:generation} que \( t_1 : A \) con un árbol de generación más chico. Entonces, por hipótesis de inducción (Adecuación), tenemos que \( t_1 \in \interp{A} \), y por lo tanto, por Lema~\ref{lem:cr} (CR1), tenemos que \( t_1 \in \snset \), que es lo que queríamos mostrar.
+      \item \( \app{\theta_1(t)}{\theta_2(u)} = \ifte{\ket{0}}{t_1}{t_2} \reducesto t_2 \)
+      \\ Análogo al caso anterior.
+      \item \( \app{\theta_1(t)}{\theta_2(u)} = \app{\theta_1(t)}{(u_1 + u_2)} \reducesto \app{\theta_1(t)}{u_1} + \app{\theta_1(t)}{u_2} \)
+      \\ Como \( \lpl{u_1} \leq \lpl{\theta_2(u)} \) y, por Lema~\ref{lem:size}, \( \size{\app{\theta_1(t)}{u_1}} < \size{\app{\theta_1(t)}{\theta_2(u)}} \), tenemos por hipótesis de inducción (2) que \( \app{\theta_1(t)}{u_1} \in \snset \). Análogamente, tenemos que \( \app{\theta_1(t)}{u_2} \in \snset \). Por lo tanto, por Lema~\ref{lem:sum_sn}, tenemos que \( \app{\theta_1(t)}{u_1} + \app{\theta_1(t)}{u_2} \in \snset \), que es lo que queríamos mostrar.
+      \item \( \app{\theta_1(t)}{\theta_2(u)} = \app{(t_1 + t_2)}{\theta_2(u)} \reducesto \app{t_1}{\theta_2(u)} + \app{t_2}{\theta_2(u)} \)
+      \\ Análogo al caso anterior.
+      \item \( \app{\theta_1(t)}{\theta_2(u)} = \app{\theta_1(t)}{(\alpha . u_1)} \reducesto \alpha . \app{\theta_1(t)}{u_1} \)
+      \\ Como \( \lpl{u_1} \leq \lpl{\theta_2(u)} \) y, por Lema~\ref{lem:size}, \( \size{\app{\theta_1{t}}{u_1}} < \size{\app{\theta_1{t}}{\theta_2(u)}} \), tenemos por hipótesis de inducción (2) que \( \app{\theta_1(t)}{u_1} \in \snset \). Por lo tanto, por Lema~\ref{lem:sum_sn}, tenemos que \( \alpha . \app{\theta_1(t)}{u_1} \in \snset \), que es lo que queríamos mostrar.
+      \item \( \app{\theta_1(t)}{\theta_2(u)} = \app{(\alpha . t_1)}{\theta_2(u)} \reducesto \alpha . \app{t_1}{\theta_2(u)} \)
+      \\ Análogo al caso anterior.
+      \item \( \app{\theta_1(t)}{\theta_2(u)} = \app{\theta_1(t)}{\nullvec{\qubittype^n}} \reducesto \nullvec{A} \)
+      \\ Por definición, \( \nullvec{A} \in \interp{S(A)} \subseteq \snset \), que es lo que queríamos mostrar.
+      \item \( \app{\theta_1(t)}{\theta_2(u)} = \app{\nullvec{\qubittype^n \Rightarrow A}}{\theta_2(u)} \reducesto \nullvec{A} \)
+      \\ Análogo al caso anterior.
+    \end{itemize}
+
+    \item Regla \textit{W}
+    \\ La regla dice:
+    \[ \infer{\Gamma, \vrbl{x}{\qubittype^n} \vdash t : A}{\Gamma \vdash t: A} \]
+    \[
+      \tag{HI}
+      \theta \models \Gamma \implies \theta(t) \in \interp{A}
+    \]
+    Queremos mostrar que si \( \theta \models \Gamma, \vrbl{x}{\qubittype^n} \), entonces \( \theta(t) \in \interp{A} \).
+    \\ Por definición de \( \theta \), tenemos que si \( \theta \models \Gamma, \vrbl{x}{\qubittype^n} \), entonces \( \theta \models \Gamma \). Y por hipótesis de inducción, tenemos que \( \theta(t) \in \interp{A} \), que es lo que queríamos mostrar.
+
+    \item Regla \textit{C}
+    \\ La regla dice:
+    \[ \infer{\Gamma, \vrbl{x}{\qubittype^n} \vdash t[x/y] : A}{\Gamma, \vrbl{x}{\qubittype^n}, \vrbl{y}{\qubittype^n} \vdash t : A} \]
+    \[
+      \tag{HI}
+      \theta \models \Gamma, \vrbl{x}{\qubittype^n}, \vrbl{y}{\qubittype^n}
+      \implies \theta(t) \in \interp{A}
+    \]
+    Queremos mostrar que si \( \theta' \models \Gamma, \vrbl{x}{\qubittype^n} \), entonces \( \theta'(t[x/y]) \in \interp{A} \).
+    \\ Por definición, tenemos que \( \theta'(t[x/y]) = \theta(t) \). Y por hipótesis de inducción, tenemos que \( \theta(t) \in \interp{A} \). Por lo tanto, tenemos que \( \theta'(t[x/y]) \in \interp{A} \), que es lo que queríamos mostrar.
+
+    \item Regla \( \times_I \)
+    \\ La regla dice:
+    \[ \infer{\Gamma, \Delta \vdash t \times u : A \times B}{\Gamma \vdash t : A & \Delta \vdash u : B} \]
+    \[
+      \tag{HI}
+      \Gamma \models \theta_1 \land \Delta \models \theta_2
+      \implies \theta_1(t) \in \interp{A} \land \theta_2(u) \in \interp{B}
+    \]
+    Queremos mostrar que si \( \theta \models \Gamma, \Delta \), entonces \( \theta(t \times u) \in \interp{A \times B} \).
+    Como \( \Gamma \) y \( \Delta \) son disjuntos, tenemos que \( \theta(t \times u) = (\theta_1 \cup \theta_2)(t \times u) = \theta_1(t) \times \theta_2(u) \), donde \( \theta_1 \models \Gamma \) y \( \theta_2 \models \Delta \).
+    Por lo tanto, basta con mostrar que \( \theta_1(t) \times \theta_2(u) \in \interp{A \times B} \).
+    \\ Como \( \theta_1(t) \in \interp{A} \), tenemos por definición que \( \theta_1(t) : S(A) \) y, por Lema~\ref{lem:cr} (CR1), \( \theta_1(t) \in \snset \). Análogamente, tenemos que \( \theta_2(u) : S(B) \) y \( \theta_2(u) \in \snset \).
+    \\ Entonces, tenemos que \( \theta_1(t) \times \theta_2(u) : S(A) \times S(B) \preceq S(S(A) \times S(B)) \) y \( \theta_1(t) \times \theta_2(u) \in \snset \). Por lo tanto, por definición de \( \interp{A \times B} \), tenemos que \( \theta_1(t) \times \theta_2(u) \in \interp{A \times B} \), que es lo que queríamos mostrar.
+
+    \item Regla \( \times_{Er} \)
+    \\ La regla dice:
+    \[ \infer{\Gamma \vdash \head{t} : \qubittype}{\Gamma \vdash t : \qubittype^n } \]
+    \[ \tag{HI} \theta \models \Gamma \implies \theta(t) \in \interp{\qubittype^n} \]
+    Queremos mostrar que si \( \theta \models \Gamma \), entonces \( \theta(\head{t}) = \head{\theta(t)} \in \interp{\qubittype} \).
+    \\ Como \( \head{t} : \qubittype \), tenemos por Lema~\ref{lem:substitution} que \( \theta(\head{t}) = \head{\theta(t)} : \qubittype \preceq S(\qubittype) \). Y por hipótesis de inducción, \( \theta(t) \in \interp{\qubittype^n} \subseteq \snset \). Entonces, \( \head{\theta(t)} \in \snset \). Por lo tanto, por definición, \( \head{\theta(t)} \in \interp{\qubittype} \), que es lo que queríamos mostrar.
+
+    \item Regla \( \times_{El} \)
+    \\ La regla dice:
+    \[ \infer{\Gamma \vdash \tail{t} : \qubittype^{n - 1}}{\Gamma \vdash t : \qubittype^n } \]
+    \[ \tag{HI} \theta \models \Gamma \implies \theta(t) \in \interp{\qubittype^n} \]
+    Queremos mostrar que si \( \theta \models \Gamma \), entonces \( \theta(\tail{t}) = \tail{\theta(t)} \in \interp{\qubittype^n}  = \interp{\qubittype \times \qubittype^{n - 1}} \). Esto equivale a mostrar que \( \tail{\theta(t)} : S(S(\qubittype) \times S(\qubittype^{n - 1})) \) y \( \tail{\theta(t)} \in \snset \).
+    \\ Como \( \tail{t} : \qubittype^n \), tenemos por Lema~\ref{lem:substitution} que \( \theta(\tail{t}) = \tail{\theta(t)} : \qubittype^n = \qubittype \times \qubittype^{n - 1} \preceq S(S(\qubittype) \times S(\qubittype^{n - 1})) \). Además, por hipótesis de inducción, \( \theta(t) \in \interp{\qubittype^n} \), y por Lema~\ref{lem:cr} (CR1), \( \theta(t) \in \snset \). Entonces, \( \tail{\theta(t)} \in \snset \). Por lo tanto, por definición, \( \tail{\theta(t)} \in \interp{\qubittype} \), que es lo que queríamos mostrar.
+
+    \item Regla \( \Uparrow_r \)
+    \\ La regla dice:
+    \[ \infer{\Gamma \vdash \cast{S(S(A) \times B)}{S(A \times B)} t : S(A \times B)}{\Gamma \vdash t : S(S(A) \times B)} \]
+    \[ \tag{HI} \theta \models \Gamma \implies \theta(t) \in \interp{S(S(A) \times B)} \]
+    Queremos mostrar que si \( \theta \models \Gamma \), entonces \( \theta(\cast{S(S(A) \times B)}{S(A \times B)} t) = \cast{S(S(A) \times B)}{S(A \times B)} \theta(t) \in \interp{S(A \times B)} \).
+    \\ Por definición de \( \interp{S(S(A) \times B)} \), tenemos que \( \theta(t) : S(S(A) \times B) \) y \( \theta(t) \in \snset \). Entonces, \( \cast{S(S(A) \times B)}{S(A \times B)} \theta(t) : S(A \times B) \) y \( \cast{S(S(A) \times B)}{S(A \times B)} \theta(t) \in \snset \). Por lo tanto, \( \cast{S(S(A) \times B)}{S(A \times B)} \theta(t) \in \interp{S(A \times B)} \), que es lo que queríamos mostrar.
+
+    \item Regla \( \Uparrow_{l} \)
+    \\ La regla dice:
+    \[ \infer{\Gamma \vdash \cast{S(A \times S(B))}{S(A \times B)} t : S(A \times B)}{\Gamma \vdash t : S(A \times S(B))} \]
+    Análogo a \( \Uparrow_{r} \).
+    \qedhere
+  \end{itemize}
+\end{proof}
+
+Ahora estamos en condiciones de probar que \( \lambdas \) posee la propiedad de normalización fuerte.
+
+\begin{theorem}[Normalización fuerte]
+  Si \( \Gamma \vdash t : A \), entonces \( t \in \snset \).
+\end{theorem}
+
+\begin{proof}
+  Por Lema~\ref{lem:adequacy}, si \( \theta \models \Gamma \) entonces \( \theta(t) \in \interp{A} \). Por otra parte, por Lema~\ref{lem:cr} (CR1), tenemos que \( \interp{A} \subseteq \snset \). Finalmente, por Lema~\ref{lem:cr} (HAB), tenemos que \( \mathsf{Id} \models \Gamma \).
+  Por lo tanto, \( \mathsf{Id(t)} = t \in \snset \), que es lo que queríamos mostrar.
+\end{proof}

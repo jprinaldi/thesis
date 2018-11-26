@@ -1,0 +1,51 @@
+\chapter{Conclusión}\label{Chapter6}
+
+\section{Resumen de aportes}
+
+Hemos probado que el lenguaje \( \lambdas \) cumple con la propiedad de normalización fuerte, la que nos garantiza que los programas escritos con cualquier implementación de dicho lenguaje siempre terminarán.
+
+Por otra parte, en el proceso de demostrar dicha propiedad, pudimos simplificar el sistema de tipado sin perder la expresividad del lenguaje. Por ejemplo, en la formulación original de \( \lambdas \), la regla \( S_E \) era la siguiente:
+\[
+  \infer[\text{ con } S \subseteq N^{\leq n} \text{ y } j \leq n]{\Gamma \vdash \proj{j}{t} : Q_n^{S \setminus \{1, \ldots, j\}}}{\Gamma \vdash t : Q_n^s}
+\]
+donde \( S \subseteq \{1, \ldots, n\} \) y \( Q_n^S \) estaba definido inductivamente de la siguiente forma:
+\begin{equation*}
+  \begin{split}
+    Q_n^S & = \begin{cases}
+                A_{n - 1}^S(\qubittype) & \text{ si } n \notin S \\
+                A_{n - 1}^{S \setminus \{n\}}(S(\qubittype)) & \text{ si } n \in S
+              \end{cases} \\
+    A_0^\emptyset(B) & = B \\
+    A_{k + 1}^S(\qubittype) & = \begin{cases}
+                                  A_k^S(\qubittype) \times \qubittype & \text{ si } k + 1 \notin S \\
+                                  A_k^{S \setminus {k + 1}}(S(\qubittype)) \times \qubittype & \text{ si } k + 1 \in S
+                                \end{cases} \\
+    A_{k + 1}^S(S(B)) & = \begin{cases}
+                            A_k^S(\qubittype) \times S(B) & \text{ si } k + 1 \notin S \\
+                            A_k^{S \setminus \{k + 1\}} (S(\qubittype \times B)) & \text{ si } k + 1 \in S
+                          \end{cases}
+  \end{split}
+\end{equation*}
+donde \( B \) es cualquier tipo.
+Sin embargo, vimos que con esta regla más simple
+\[
+  \infer{\Gamma \vdash \proj{j}{t} : \qubittype^j \times S(\qubittype^{n - j})}{\Gamma \vdash t : S(\qubittype^n)}
+\]
+la expresividad del lenguaje no se modifica.
+
+En cuanto al sistema de reescritura, identificamos que en la formulación original no existía una regla que permita realizar la siguiente reducción:
+\[
+  \nullvec{S(A)} \reducesto \nullvec{A}
+\]
+Si bien en principio esto no refutaba la existencia de una forma normal al final de toda secuencia de reducción, sí rechazaba la unicidad de dicha forma, ya que, por ejemplo, el término \( 0 . \nullvec{A} \) podía reducir de las siguientes maneras:
+\begin{equation*}
+  \begin{split}
+    0 . \nullvec{A} & \xrightarrow{\mathsf{zero}_\alpha} \nullvec{S(A)} \\
+    0 . \nullvec{A} & \xrightarrow{\mathsf{zero}} \nullvec{A}
+  \end{split}
+\end{equation*}
+donde tanto \( \nullvec{S(A)} \) como \( \nullvec{A} \) eran términos en forma normal. En resumen, esto impedía que el lenguaje tuviese la propiedad de \textit{confluencia}, la cual usualmente es deseable poseer. Es por este motivo que agregamos la regla \textsf{null}, la cual permite realizar dicha reducción. Cabe destacar que hacer eso solo nos permitió cumplir con una condición necesaria para que el lenguaje sea confluyente, todavía queda probar que efectivamente lo sea.
+
+\section{Trabajo futuro}
+
+Como vimos antes, la propiedad de confluencia está íntimamente relacionada a la de normalización fuerte. Ahora bien, con su formulación estándar, esta propiedad garantiza que sea cual sea la estrategia de reducción elegida por las diferentes implementaciones de un lenguaje, el resultado obtenido siempre será el mismo. Sin embargo, dada la naturaleza probabilística de \( \lambdas \), es claro que esto no es exactamente lo que queremos. Lo que en verdad sería interesante es que, más allá de que los resultados finales puedan ser diferentes, la distribución de ellos sea siempre la misma. A esta propiedad se la conoce como \textit{confluencia de distribuciones}~\cite{confluence-thesis, confluence}, y sería importante poder demostrar que \( \lambdas \) la posee.
